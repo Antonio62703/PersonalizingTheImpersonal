@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data 4</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Warning Screen - Shows first -->
+  <div id="warningScreen" class="warning-screen active">
+    <div class="warning-content">
+      <div class="warning-title">CAUTION</div>
+      <div class="warning-text">NO CHILDREN<br>OR DOGS ON<br><span class="mezzanine-text">MEZZANINE</span></div>
+    </div>
+  </div>
+
+  <!-- Grid Navigation Screen -->
+  <div id="gridScreen" class="grid-screen">
+    <!-- Navigation link to close the tab -->
+    <a href="#" class="grid-nav-link" onclick="window.close(); return false;">Personalizing the Personal</a>
+    
+    <div class="grid-container">
+      <svg id="gridSvg" viewBox="0 0 1000 1000" class="grid-svg">
+        <!-- Grid lines will be drawn by JavaScript -->
+      </svg>
+      <div class="grid-instructions">Use arrow keys to move. Find the ★ to enter.</div>
+    </div>
+    
+    <!-- Control Panel at bottom -->
+    <div class="control-panel">
+      <div class="arrow-buttons">
+        <button class="arrow-btn arrow-up" aria-label="Move up">↑</button>
+        <div class="arrow-row">
+          <button class="arrow-btn arrow-left" aria-label="Move left">←</button>
+          <button class="arrow-btn arrow-down" aria-label="Move down">↓</button>
+          <button class="arrow-btn arrow-right" aria-label="Move right">→</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Block 3 Location Text -->
+    <div class="block3-location-text">THE ART ROOM 700s<br>(SECRET MEETING ROOM)</div>
+    
+    <!-- Floorplan Sliding Window -->
+    <div class="floorplan-window">
+      <img src="floorplan.jpg" alt="Floor Plan" class="floorplan-image" />
+      <div class="floorplan-caption">[Providence Athenæum, Front Elevation with First Floor, Upper Floor and Basement floor plans]. Ink, pencil and watercolor on paper, ca. 1836. Providence Athenæum: Russell Warren Drawings 188a</div>
+      <div class="scroll-indicator" id="floorplanScrollIndicator">
+        <span class="scroll-indicator-text">Scroll</span>
+        <div class="scroll-indicator-arrow"></div>
+      </div>
+    </div>
+    
+    <!-- Top View Sliding Window -->
+    <div class="topview-window">
+      <div class="topview-content">
+        <img src="Top1.jpg" alt="Top View" class="topview-image" />
+        <div class="topview-text">
+          <h2>The Art Room</h2>
+          
+          <p>Originally used as a storage space, the Athenæum's Art Room was later converted into a dedicated room for art-related materials. Today, it's reserved primarily for member use and occasionally serves as a meeting space for staff and the board. The room houses an extensive collection of oversized art books, mainly classified in the 700s, and functions as both a quiet study area and a space for managing the library's art holdings.</p>
+          
+          <p>The collection is regularly maintained through a process known as "weeding," in which librarians review books that haven't circulated in ten or even twenty years, as well as those in poor physical condition. Decisions are made about whether a book should be restored, replaced, or removed entirely, depending on its relevance and condition. New books are ordered every week, with each librarian responsible for specific subject areas. They consult review magazines and strive to build a diverse, modern collection that reflects the evolving goals of a contemporary lending library.</p>
+          
+          <h3>The Special Collection</h3>
+          
+          <p>Some materials, however, are too rare or valuable to be removed. These belong to the Athenæum's Special Collection—a climate-controlled space containing around 30,000 rare books within the library's larger 175,000-volume collection. Every title in the Special Collection is catalogued online and accessible to researchers by appointment. The collection includes works on natural history, travel and exploration, early literature, biographies, and children's books. It also houses photographs and film materials. Many of these volumes are leather-bound and stored under careful conditions, kept at a humidity of about 45 percent and a temperature between 66 and 70°F. The oldest book in the collection dates back to around 1300 BCE, predating the printing press, though most are from the 1800s. The room also hosts three to four rare-book exhibits each year, curated based on a title's rarity, condition, and research value.</p>
+          
+          <p>The Athenæum's restoration team handles basic in-house repairs, such as fixing spines or reattaching pages, while particularly delicate works are sent to professional conservators. Occasionally, books removed from circulation are reconsidered for inclusion in the Special Collection if their historical or cultural value becomes apparent.</p>
+          
+          <h3>Additional Spaces</h3>
+          
+          <p>Elsewhere in the building, "The Bound" serves as an overflow space for the 800s section, mainly poetry and plays. It also accommodates library events, food and drink gatherings, and weekend reading groups. About twenty reading groups meet monthly, each led by a member who provides an annual reading list. Although the card catalog system stopped being updated after 1990, it remains in occasional use for older materials not yet digitized. Books over seventy-five years old on the circulating shelves are for in-house use only, and those without barcodes exist solely within the traditional card files—quiet reminders of the library's long and layered history.</p>
+        </div>
+      </div>
+      <div class="scroll-indicator" id="topviewScrollIndicator">
+        <span class="scroll-indicator-text">Scroll</span>
+        <div class="scroll-indicator-arrow"></div>
+      </div>
+    </div>
+  </div>
+
+  <main class="app hidden">
+    <!-- Return to Grid Button -->
+    <button id="returnToGrid" class="return-to-grid-btn" aria-label="Return to grid">✕</button>
+    
+    <!-- LEFT: RESIZABLE PANEL (Text content) -->
+    <div class="resizable-panel">
+      <div class="panel-content">
+        <div class="header-section">
+          <h1 class="panel-title">Intimacy Through<br>Public Space</h1>
+          <div class="panel-subtitle">Collected Studies and Site Analysis</div>
+        </div>
+        
+        <img src="Pic1.JPG" alt="Providence Athenæum Interior" class="panel-image" />
+        
+        <p>Intimacy in design isn't only about privacy, it's about how space makes people feel close, safe, and connected even in shared or public areas. Researchers in architecture and psychology have found that small-scale spaces, warm materials, and subtle boundaries help turn large or impersonal places into ones that feel personal. A study on Public Space Intimacy (Victoria University of Wellington, 2018) explains that details like lower ceilings, corners, and partitions let people feel "present but protected." In Tokyo's Jimbocho neighborhood, researchers noticed that narrow streets and tiny shops create a sense of comfort inside a dense city (Urban Design and Mental Health Journal, 2017). Other studies on Public Intimacy in architecture show that buildings can connect public life with private feeling, letting people project their own emotions and stories into a shared space. Together, these ideas show that intimacy in public space comes from design that lets people take small ownership, choosing a corner, a bench, or a path that feels like their own.</p>
+        
+        <img src="Pic2.JPG" alt="Library Details" class="panel-image" />
+        
+        <p>The Providence Athenæum shows how a public building can still feel deeply personal. Although it's open to everyone, its rooms are small and layered, filled with tall bookshelves, narrow aisles, and wooden staircases that divide the space into cozy sections. The building, first designed by William Strickland in 1838, looks grand from the outside with its Greek Revival style, but inside it feels more like a quiet home for readers than a formal institution. Later renovations kept its warm wood, soft lighting, and skylights that bring in daylight, elements that make the space gentle and human. According to our data and research, there are a total of 13 different chairs donated, 6 different kinds of lights, and 16 corners throughout the library, each contributing to the building's intimate rhythm and texture. These choices help visitors slow down and find their own corner or chair, making the library feel both public and private at once. In this way, the Athenæum turns public knowledge into a personal experience, into a place where architecture itself invites closeness.</p>
+        
+        <img src="Pic3.JPG" alt="Architectural Elements" class="panel-image" />
+        
+        <img src="Pic4.JPG" alt="Library Atmosphere" class="panel-image" />
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- MIDDLE: CONTROLS -->
+    <section class="left" aria-label="Controls">
+      <div class="controls">
+        <!-- Room width -->
+       <label for="t" class="control-label hover-split-target">
+          Space
+        </label>
+        <input id="t" type="range" min="0" max="0.9" step="0.01" value="0" aria-label="Adjust room depth" />
+
+        <!-- Stuffiness -->
+       <label for="stuffiness" class="control-label hover-split-target">
+          Stuffiness
+        </label>
+        <input id="stuffiness" type="range" min="0" max="1" step="0.01" value="0" aria-label="Room stuffiness level" />
+
+        <!-- Ambiance control -->
+        <div class="switch-row" aria-live="polite">
+          <label class="light-switch">
+            <input id="tintSwitch" type="checkbox" aria-label="Toggle warm lighting ambiance" />
+            <svg class="light-switch-svg" viewBox="0 0 60 100" width="80" height="120">
+              <!-- Switch plate -->
+              <rect x="5" y="5" width="50" height="90" rx="3" class="switch-plate" />
+              <!-- Screws -->
+              <circle cx="30" cy="12" r="2" class="screw" />
+              <circle cx="30" cy="88" r="2" class="screw" />
+              <!-- Toggle switch -->
+              <rect x="22" y="35" width="16" height="30" rx="2" class="toggle" />
+            </svg>
+          </label>
+        </div>
+        
+        <!-- Expand panel button -->
+        <div class="expand-btn-row">
+          <button class="expand-panel-btn" aria-label="Expand text panel">>>></button>
+        </div>
+       
+      </div>
+    </section>
+
+    <!-- RIGHT: Room + Chair + Objects -->
+    <section class="right" aria-label="Room viewport">
+      <!-- Instruction text that appears when sliders are used -->
+      <div class="room-instruction-text">Freely click and drag the chair and objects</div>
+      
+      <div class="room">
+        <img class="chair" src="chairathen.png" alt="Chair - Click to change" />
+        <img class="ladder object-item" data-threshold="0.95" src="ladder.png" alt="Ladder" />
+        <!-- Stool1 PNG - appears at 65% - positioned on outer right wall -->
+        <img class="stool1-png object-item" data-threshold="0.65" src="stool1.png" alt="Stool 1" />
+        <!-- Stool PNG - appears at 15% -->
+        <img class="stool-png object-item" data-threshold="0.15" src="Stool.png" alt="Stool" />
+        
+        <!-- Table PNG - appears at 30% -->
+        <img class="table-png object-item" data-threshold="0.3" src="Table.png" alt="Table" />
+        
+        <!-- Sign 1 PNG - appears at 45% -->
+        <img class="sign1-png object-item" data-threshold="0.45" src="sign1.png" alt="Sign 1" />
+        
+        <!-- Sign 2 PNG - appears at 55% -->
+        <img class="sign2-png object-item" data-threshold="0.55" src="sign2.png" alt="Sign 2" />
+        
+        <!-- Sign 3 PNG - appears at 70% -->
+        <img class="sign3-png object-item" data-threshold="0.7" src="sign3.png" alt="Sign 3" />
+        
+        <!-- Light PNG - appears at 75% -->
+        <img class="light-png object-item" data-threshold="0.75" src="light.png" alt="Light" />
+        
+        <!-- Sign 4 PNG - appears at 85% -->
+        <img class="sign4-png object-item" data-threshold="0.85" src="sign4.png" alt="Sign 4" />
+        
+        <svg viewBox="0 0 1200 750" role="img" aria-label="Corridor that narrows as walls close in">
+          <!-- corner diagonals -->
+          <line id="L_diag_top" class="hl2" x1="0" y1="0"    x2="365"  y2="100"/>
+          <line id="R_diag_top" class="hl2" x1="1200" y1="0" x2="1035" y2="100"/>
+          <line id="L_diag_bot" class="hl2" x1="0" y1="750"  x2="365"  y2="740"/>
+          <line id="R_diag_bot" class="hl2" x1="1200" y1="750" x2="1035" y2="740"/>
+
+          <!-- back wall -->
+          <rect id="back"  class="hl"  x="490" y="270" width="420" height="300"/>
+          <rect id="back2" class="hl2" x="505" y="285" width="390" height="270"/>
+
+          <!-- left wall -->
+          <line id="L_arm_top" class="hl"  x1="490" y1="270" x2="365"  y2="120"/>
+          <line id="L_arm_bot" class="hl"  x1="490" y1="570" x2="365"  y2="730"/>
+          <line id="L_far"     class="hl2" x1="365" y1="120" x2="365"  y2="730"/>
+
+          <!-- right wall -->
+          <line id="R_arm_top" class="hl"  x1="910" y1="270" x2="1035" y2="120"/>
+          <line id="R_arm_bot" class="hl"  x1="910" y1="570" x2="1035" y2="730"/>
+          <line id="R_far"     class="hl2" x1="1035" y1="120" x2="1035" y2="730"/>
+        </svg>
+      </div>
+    </section>
+  </main>
+
+  <!-- full-screen tint overlay -->
+  <div id="screenTint" class="screen-tint" aria-hidden="true">
+    <div class="tint-message">
+      <p>Average North American public libraries use about 1,200 kWh of energy per day.</p>
+      <p>If lights stay on automatically, much of that is wasted.</p>
+      <p>Allowing users to turn lights on and off themselves can cut lighting energy by 20Ã¢â‚¬"35%, saving around 60Ã¢â‚¬"120 kWh per day overall.</p>
+    </div>
+  </div>
+
+  <!-- Custom cursor -->
+  <div class="custom-cursor"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
