@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interview - Stephanie Ovoian</title>
+    <style>
+        /* Custom Fonts - Affairs and Monument Grotesk Mono */
+        @font-face {
+            font-family: 'Affairs';
+            src: url("fonts/AffairsTest-Regular.otf") format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Monument Grotesk Mono';
+            src: url("fonts/ABCMonumentGroteskMono-Regular-Trial.otf") format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        :root {
+            --white: #ffffff;
+            --black: #000000;
+            --gray: #808080;
+        }
+
+        body {
+            font-family: 'Affairs', serif;
+            background: var(--black);
+            color: var(--white);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Custom Cursor */
+        .cursor {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--white);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.2s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.hover {
+            transform: scale(1.5);
+        }
+
+        /* Noise Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            z-index: 1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Animated Lines */
+        .lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .line {
+            position: absolute;
+            background: var(--white);
+            opacity: 0.3;
+        }
+
+        .line.vertical {
+            width: 1px;
+            height: 100%;
+            animation: slideDown 20s infinite linear;
+        }
+
+        .line.horizontal {
+            height: 1px;
+            width: 100%;
+            animation: slideRight 25s infinite linear;
+        }
+
+        @keyframes slideDown {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        @keyframes slideRight {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100vw); }
+        }
+
+        /* Blueprint Grid Background */
+        .blueprint-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.08;
+        }
+
+        .blueprint-grid svg {
+            width: 100%;
+            height: 100%;
+        }
+
+    
+    nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 1.3rem 3rem;  /* Changed from 2rem - brings line closer */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    background: var(--black);
+    border-bottom: 1px solid var(--white);
+}
+
+.nav-left, .nav-right {
+    display: flex;
+    flex-direction: row;  /* CHANGE from column to row */
+    gap: 2rem;  /* CHANGE from 0.5rem to 2rem for more spacing */
+}
+
+        .nav-item {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            font-family: 'Monument Grotesk Mono', monospace;
+            text-decoration: none;
+            color: var(--white);
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item:hover {
+            opacity: 0.5;
+        }
+
+        .nav-item.active {
+            text-decoration: underline;
+        }
+
+        /* Main container */
+       .container {
+    position: relative;
+    z-index: 2;
+    padding-top: 60px;  /* Much smaller - just clears the nav */
+}
+
+        /* Two column layout */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Left column - Images - CONTINUOUS SCROLL */
+        .left-column {
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-block {
+    margin-bottom: 0;
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 100vh;
+}
+
+.interview-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    border: none;
+}
+
+        /* Right column - Text */
+        .right-column {
+            padding: 60px 60px 60px 40px;
+            border-left: 1px solid var(--white);
+        }
+
+        /* Text content styling */
+        .text-content {
+            max-width: 100%;
+        }
+
+        .text-content p {
+            margin-bottom: 1.6em;
+            line-height: 1.2;
+            font-size: 24px;
+            font-family: 'Affairs', serif;
+        }
+
+        /* Bold labels for speakers */
+        .text-content strong {
+            font-weight: 600;
+            font-family: 'Monument Grotesk Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        /* First intro paragraph */
+        .intro-text {
+            margin-bottom: 2.5em;
+            opacity: 0.5;
+        }
+
+        /* Date and title section */
+        .header-section {
+            margin-bottom: 3em;
+        }
+
+        .interview-date {
+            font-size: 12px;
+            margin-bottom: 1em;
+            letter-spacing: 0.1em;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .interview-title {
+            font-size: 40px;
+            font-weight: 400;
+            margin-bottom: 1em;
+            line-height: 1.2;
+            font-family: 'Affairs', serif;
+        }
+
+        .interview-subtitle {
+            font-size: 14px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-family: 'Monument Grotesk Mono', monospace;
+            opacity: 0.7;
+            margin-bottom: 3em;
+        }
+
+        /* Pull quote styling - VERY LARGE */
+        .pull-quote-wrapper {
+            margin: 5em 0;
+        }
+
+        p.pull-quote,
+        .pull-quote-wrapper p,
+        .pull-quote-wrapper .pull-quote,
+        .text-content .pull-quote-wrapper p.pull-quote {
+            font-size: 70px !important;
+            line-height: 1.1 !important;
+            font-weight: 400 !important;
+            margin-bottom: 0 !important;
+            font-family: 'Affairs', serif !important;
+            letter-spacing: -0.03em !important;
+        }
+
+        /* Bio section */
+        .bio-section {
+            margin-top: 4em;
+            padding-top: 2em;
+            border-top: 1px solid var(--white);
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.7;
+            font-family: 'Affairs', serif;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            body {
+                font-size: 16px;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .left-column {
+                padding: 0;
+            }
+
+            .right-column {
+                padding: 40px 20px 80px 20px;
+                border-left: none;
+                border-top: 1px solid var(--white);
+            }
+
+            nav {
+                padding: 1.5rem;
+            }
+
+            .interview-title {
+                font-size: 24px;
+            }
+
+            .pull-quote {
+                font-size: 42px;
+            }
+
+            .text-content p {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .pull-quote {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+
+    <!-- Animated Lines -->
+    <div class="lines">
+        <div class="line vertical" style="left: 20%;"></div>
+        <div class="line vertical" style="left: 50%;"></div>
+        <div class="line vertical" style="left: 80%;"></div>
+        <div class="line horizontal" style="top: 30%;"></div>
+        <div class="line horizontal" style="top: 70%;"></div>
+    </div>
+
+    <!-- Blueprint Grid -->
+    <div class="blueprint-grid">
+        <svg xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="smallGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="white" stroke-width="0.5" opacity="0.5"/>
+                </pattern>
+                <pattern id="grid" width="150" height="150" patternUnits="userSpaceOnUse">
+                    <rect width="150" height="150" fill="url(#smallGrid)"/>
+                    <path d="M 150 0 L 0 0 0 150" fill="none" stroke="white" stroke-width="0.8" opacity="0.6"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+    </div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-left">
+            <a href="index.html" class="nav-item">Personalizing the Impersonal</a>
+        </div>
+        <div class="nav-right">
+            <a href="#interview" class="nav-item active">INTERVIEW</a>
+        </div>
+    </nav>
+
+    <!-- Main container -->
+    <div class="container">
+        <div class="two-column">
+            <!-- Left column - Images (continuous scroll) -->
+            <div class="left-column">
+                <div class="image-block">
+                    <img src="img/309A0923.png" alt="Library interior" class="interview-image">
+                </div>
+
+                <div class="image-block">
+                    <img src="img/309A0754.png" alt="Book stacks" class="interview-image">
+                </div>
+
+                <div class="image-block">
+                    <img src="img/309A0930.png" alt="Reading desk" class="interview-image">
+                </div>
+
+                <div class="image-block">
+                    <img src="img/img1.jpg" alt="Archive" class="interview-image">
+                </div>
+
+                <div class="image-block">
+                    <img src="img/309A0957.png" alt="Architecture" class="interview-image">
+                </div>
+            </div>
+
+            <!-- Right column - Text -->
+            <div class="right-column">
+                <div class="text-content">
+                    <div class="header-section">
+                        <div class="interview-date">10.07.2025</div>
+                        <h1 class="interview-title">A Conversation With<br>Stephanie Ovoian</h1>
+                        <div class="interview-subtitle">Head of Research & Library Services</div>
+                    </div>
+
+                    <p class="intro-text">The following is a conversation with Stephanie Ovoian, Head of Research & Library Services at the Providence Athenaeum, about her work at one of America's oldest independent libraries, established in 1836.</p>
+
+                    <p><strong>FH:</strong> What is your name, your role at the Athenaeum, and how long have you been working here?</p>
+
+                    <p><strong>ST:</strong> I'm Stephanie Ovoian, Head of Research & Library Services at the Providence Athenaeum. I've worked at the Athenaeum for 12 years and have been in my current role for nearly 4 years.</p>
+
+                    <p><strong>FH:</strong> What made you want to work at the library?</p>
+
+                    <p><strong>ST:</strong> The Athenaeum is a unique library with a long history (non-profit, member-supported library established in 1836), and it has a fascinating collection of rare books. As a library school student, I hoped to work with rare books, and was initially drawn to the Athenaeum specifically for that reason.</p>
+
+                    <p><strong>FH:</strong> What do you like most about working at the Athenaeum?</p>
+
+                    <p><strong>ST:</strong> So many things! I love working for an institution with a mission I truly believe in, and I also love that I get to learn something new every day while working at the Athenaeum – from patron interactions, the collections, the building, and my colleagues.</p>
+
+                    <p><strong>FH:</strong> What do you think is the most special quality about the Athenaeum?</p>
+
+                    <p><strong>ST:</strong> I think the library's age and history makes it a particularly special place, and the charm of the physical building adds to that.</p>
+
+                    <p><strong>FH:</strong> What does a typical day at the Athenaeum look like for you?</p>
+
+                    <p><strong>ST:</strong> My day-to-day work is a combination of research services, overseeing general library operations, providing tours of the library, and special collections work.</p>
+
+                    <p><strong>FH:</strong> How does the building itself shape the kind of work or reading that happens here, compared to a modern library?</p>
+
+                    <p><strong>ST:</strong> The Athenaeum is definitely a 19th century library operating in the 21st century! We don't have a computer lab, maker space, or meeting rooms for collaborative work like many modern public libraries have, though we do have Wi-Fi throughout the building. The Main Hall is surrounded by an open Mezzanine Level, which allows for sound to travel through the levels easily, and so the space does inspire quietness. These two levels include individual desks, a few larger tables, and some seating areas for reading and individual work. The lower level Reading Room provides space for individual or quiet collaborative group work at tables or in comfortable chairs.</p>
+
+                    <div class="pull-quote-wrapper">
+                        <p class="pull-quote">"Part of the Athenaeum experience involves a feeling of stepping back in time."</p>
+                    </div>
+
+                    <p><strong>FH:</strong> What's something a patron has said about the Athenaeum that surprised you or made you see it differently?</p>
+
+                    <p><strong>ST:</strong> Occasionally, someone new to the library will come to the desk and say they'd like to buy a library book, which always takes me by surprise!</p>
+
+                    <p><strong>FH:</strong> What's a small, behind-the-scenes ritual or task that feels essential to maintaining this place?</p>
+
+                    <p><strong>ST:</strong> From late spring through early fall, we run three dehumidifiers in the Rare Book Room to help with humidity levels, as that part of the building is semi-subterranean. Every morning when I first get to work, I go downstairs and empty these dehumidifiers in the janitor's sink, and every evening my colleague empties them before we close. This is a very mundane ritual, but truly essential to maintaining the proper environment in the Rare Book Room during the summer!</p>
+
+                    <p><strong>FH:</strong> Has working here changed how you think about what libraries are for?</p>
+
+                    <p><strong>ST:</strong> Yes! The Athenaeum was founded before tax-supported public libraries existed, yet is still open today, 189 years later. Having this historic perspective as part of my daily work has helped me realize that libraries are timeless and will always be relevant, as long as they remain true to their goal of serving and supporting their communities.</p>
+
+                    <div class="pull-quote-wrapper">
+                        <p class="pull-quote">"Libraries are timeless and will always be relevant, as long as they remain true to their goal of serving and supporting their communities."</p>
+                    </div>
+
+                    <p><strong>FH:</strong> Are there objects, architectural details, or even smells that people mention when they talk about what the Athenaeum means to them?</p>
+
+                    <p><strong>ST:</strong> Yes! People often mention the creaky floors on the Mezzanine Level, the particular smell of books upon walking inside, the 19th century titles mixed in with the modern titles on our open shelves, the card catalog, the light switches, the alcoves and nooks throughout the building, and the warmth and vibrancy of the Children's Library.</p>
+
+                    <p><strong>FH:</strong> How do you balance preserving the historic character with evolving what the library offers?</p>
+
+                    <p><strong>ST:</strong> I'll answer this through 3 lenses:</p>
+
+                    <p>Collections - As a modern lending library, we are always ordering new titles for our collections to meet the needs of our readers. However, we are very attuned to the fact that part of the Athenaeum experience involves a feeling of stepping back in time, and so we deliberately keep titles from the 19th century on our open shelves to inspire patrons.</p>
+
+                    <p>Programs - As libraries are gathering spaces for the exchange of ideas, we offer a robust calendar of events and reading groups on a wide range of topics. We often partner with local and regional organizations and pull inspiration from our collections, both modern and historic. Events are held in-person at the library and are live streamed and recorded for on-demand access, and some of our reading groups are held over Zoom so folks can participate no matter where they are located.</p>
+
+                    <p>Building - The library's historic building is a big draw for members and visitors alike, and the Athenaeum has become a popular tourist spot. We offer a self-guided tour accessible by QR code to visitors interested in learning about the library and its history. We place a big focus on maintenance and upkeep on the building to offset the natural wear and tear from increased patron and regular staff use.</p>
+
+                    <p><strong>FH:</strong> If the Athenaeum has a personality, how would you describe it?</p>
+
+                    <p><strong>ST:</strong> I'd say the Athenaeum is a loyal, curious, charismatic introvert!</p>
+
+                    <p><strong>FH:</strong> What do you hope people take with them when they leave, beyond just the books?</p>
+
+                    <p><strong>ST:</strong> I feel so grateful that people take the time out of their lives to come inside our doors and interact with the space, collections, staff, programming, and one another. I hope that people feel welcomed and valued when they are here at the Athenaeum, and that they leave wanting to come back again one day.</p>
+
+                    <div class="bio-section">
+                        <p>Stephanie Ovoian is the Head of Research & Library Services at the Providence Athenaeum, where she has worked for 12 years. She oversees research services, library operations, tours, and special collections work at one of America's oldest independent libraries, established in 1836.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Custom Cursor
+        const cursor = document.querySelector('.cursor');
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.1;
+            cursorY += (mouseY - cursorY) * 0.1;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // Cursor hover effect
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+        });
+    </script>
+</body>
+</html>

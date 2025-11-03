@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fountain Soundscape</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Custom Fonts */
+        @font-face {
+            font-family: 'Affairs';
+            src: url("fonts/AffairsTest-Regular.otf") format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Monument Grotesk Mono';
+            src: url("fonts/ABCMonumentGroteskMono-Regular-Trial.otf") format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'Affairs', serif;
+            background: #000000;
+            overflow: hidden;
+        }
+
+        /* Experimental Grid Overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.08;
+        }
+
+        .grid-overlay svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Link in control panel */
+        .nav-link {
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            font-family: 'Monument Grotesk Mono', monospace;
+            text-decoration: none;
+            color: #ffffff;
+            transition: opacity 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #ffffff;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-link:hover {
+            opacity: 1;
+        }
+
+        #waterBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            filter: grayscale(100%) contrast(1.1);
+            background-image: url("img/img4.jpg");
+        }
+
+        /* Graphic water droplets */
+        .water-droplet {
+            position: fixed;
+            width: 50px;
+            height: 65px;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+        }
+
+        .water-droplet svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes dropletAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) translateY(-20px);
+            }
+            20% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        .water-droplet.active {
+            animation: dropletAppear 3s ease-in-out forwards;
+        }
+
+        /* Control Panel - Simplified title only */
+        .soundcloud-player {
+            position: fixed;
+            left: 40px;
+            top: 40px;
+            width: auto;
+            height: auto;
+            background: transparent;
+            z-index: 100;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 0;
+            outline: none;
+        }
+
+        /* Experimental coordinate system */
+        .coordinate-system {
+            display: none;
+        }
+
+        .player-controls {
+            display: none;
+        }
+
+        /* Deconstructed play button */
+        .play-button-container {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 0;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Experimental corner brackets */
+        .corner-brackets {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .corner-bracket {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .corner-bracket.tl {
+            top: 0;
+            left: 0;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .corner-bracket.tr {
+            top: 0;
+            right: 0;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .corner-bracket.bl {
+            bottom: 0;
+            left: 0;
+            border-right: none;
+            border-top: none;
+        }
+
+        .corner-bracket.br {
+            bottom: 0;
+            right: 0;
+            border-left: none;
+            border-top: none;
+        }
+
+        .play-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #fff;
+            transform: scale(1.05);
+        }
+
+        .play-button.active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .play-button.active .corner-bracket {
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 10px 0 10px 16px;
+            border-color: transparent transparent transparent rgba(255, 255, 255, 0.9);
+            margin-left: 3px;
+        }
+
+        .play-button.active .play-icon {
+            border-style: double;
+            border-width: 0 0 0 16px;
+            height: 20px;
+            margin-left: 0;
+            border-color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Audio level meter - experimental style */
+        .level-meters {
+            display: flex;
+            flex-direction: row;
+            gap: 0;
+            align-items: center;
+            position: relative;
+            padding-left: 3rem;
+        }
+
+        .level-meters::before {
+            content: '';
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Connecting lines between meters */
+        .meter-connector {
+            display: none;
+        }
+
+        .level-meter {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            position: relative;
+            min-width: 150px;
+        }
+
+        .level-label {
+            font-family: 'Affairs', serif;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .level-value-display {
+            font-family: 'Affairs', serif;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 1px;
+        }
+
+        .level-bar-container {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0;
+            overflow: visible;
+            position: relative;
+        }
+
+        .level-bar-container::before,
+        .level-bar-container::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            width: 1px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .level-bar-container::before {
+            left: 0;
+        }
+
+        .level-bar-container::after {
+            right: 0;
+        }
+
+        .level-bar {
+            height: 100%;
+            background: #ffffff;
+            width: 0%;
+            transition: width 0.1s ease;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .frequency-levels {
+            display: none;
+        }
+
+        .freq-meter {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .freq-label {
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .freq-bar-container {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0;
+            overflow: visible;
+            position: relative;
+        }
+
+        .freq-bar-container::before,
+        .freq-bar-container::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            width: 1px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .freq-bar-container::before {
+            left: 0;
+        }
+
+        .freq-bar-container::after {
+            right: 0;
+        }
+
+        .freq-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .freq-bar.bass {
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .freq-bar.mid {
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .freq-bar.high {
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Droplet intensity control - experimental redesign */
+        .droplet-control-section {
+            position: fixed;
+            bottom: 60px;
+            left: 80px;
+            right: 80px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* Experimental time display */
+        .time-display-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin-bottom: 30px;
+        }
+
+        .time-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .time-marker.active {
+            opacity: 1;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .time-icon {
+            width: 40px;
+            height: 40px;
+            transition: opacity 0.5s ease;
+        }
+
+        .sun-icon {
+            opacity: 1;
+        }
+
+        .moon-icon {
+            opacity: 0;
+            position: absolute;
+        }
+
+        .control-label.night .sun-icon {
+            opacity: 0;
+        }
+
+        .control-label.night .moon-icon {
+            opacity: 1;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        /* Experimental slider rail markers */
+        .slider-markers {
+            position: absolute;
+            left: 50px;
+            right: 50px;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .slider-marker {
+            width: 1px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .time-label {
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.8);
+            letter-spacing: 2px;
+            min-width: 60px;
+            position: relative;
+        }
+
+        .time-label::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            width: 4px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .time-label:last-child::before {
+            left: auto;
+            right: -10px;
+        }
+
+        #gobletSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 0;
+            outline: none;
+            position: relative;
+        }
+
+        #gobletSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 0;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            position: relative;
+        }
+
+        #gobletSlider::-webkit-slider-thumb:hover {
+            border-color: #fff;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+            transform: scale(1.15);
+        }
+
+        #gobletSlider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 0;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        }
+
+        #gobletSlider::-moz-range-thumb:hover {
+            border-color: #fff;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+            transform: scale(1.15);
+        }
+
+        /* Current time readout */
+        .current-time-readout {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        /* Water goblets - p5.js canvas */
+        #gobletCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 40;
+            pointer-events: none;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: none;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.active .status-dot {
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            .soundcloud-player {
+                left: 20px;
+                top: 20px;
+            }
+
+            .droplet-control-section {
+                left: 40px;
+                right: 40px;
+                bottom: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Experimental Grid Overlay -->
+    <div class="grid-overlay">
+        <svg viewBox="0 0 1920 1080" preserveAspectRatio="none">
+            <!-- Vertical lines -->
+            <line x1="0" y1="0" x2="0" y2="1080" stroke="white" stroke-width="0.5"/>
+            <line x1="320" y1="0" x2="320" y2="1080" stroke="white" stroke-width="0.5"/>
+            <line x1="640" y1="0" x2="640" y2="1080" stroke="white" stroke-width="0.5"/>
+            <line x1="960" y1="0" x2="960" y2="1080" stroke="white" stroke-width="0.5"/>
+            <line x1="1280" y1="0" x2="1280" y2="1080" stroke="white" stroke-width="0.5"/>
+            <line x1="1600" y1="0" x2="1600" y2="1080" stroke="white" stroke-width="0.5"/>
+            <line x1="1920" y1="0" x2="1920" y2="1080" stroke="white" stroke-width="0.5"/>
+            <!-- Horizontal lines -->
+            <line x1="0" y1="0" x2="1920" y2="0" stroke="white" stroke-width="0.5"/>
+            <line x1="0" y1="270" x2="1920" y2="270" stroke="white" stroke-width="0.5"/>
+            <line x1="0" y1="540" x2="1920" y2="540" stroke="white" stroke-width="0.5"/>
+            <line x1="0" y1="810" x2="1920" y2="810" stroke="white" stroke-width="0.5"/>
+            <line x1="0" y1="1080" x2="1920" y2="1080" stroke="white" stroke-width="0.5"/>
+        </svg>
+    </div>
+
+    <!-- Water Background -->
+    <div id="waterBackground"></div>
+
+    <!-- p5.js Canvas for liquid blobs -->
+    <div id="gobletCanvas"></div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator" id="statusIndicator">
+        <div class="status-dot"></div>
+        <span id="statusText">STANDBY</span>
+    </div>
+
+    <!-- Control Panel on Left -->
+    <div class="soundcloud-player">
+        <a href="index.html" class="nav-link">← Personalizing the Impersonal</a>
+        
+        <!-- Coordinate System -->
+        <div class="coordinate-system">
+            X: 00.0000<br>
+            Y: 00.0000<br>
+            T: <span id="timeCoord">00:00</span>
+        </div>
+        
+        <div class="player-controls">
+            <div class="play-button-container">
+                <button class="play-button" id="playButton">
+                    <div class="play-icon"></div>
+                </button>
+                <div class="corner-brackets">
+                    <div class="corner-bracket tl"></div>
+                    <div class="corner-bracket tr"></div>
+                    <div class="corner-bracket bl"></div>
+                    <div class="corner-bracket br"></div>
+                </div>
+            </div>
+
+            <div class="level-meters">
+                <div class="meter-connector"></div>
+                
+                <div class="level-meter">
+                    <div class="level-label">
+                        <span>AUDIO LEVEL</span>
+                        <span class="level-value-display" id="levelValue">0%</span>
+                    </div>
+                    <div class="level-bar-container">
+                        <div class="level-bar" id="levelBar"></div>
+                    </div>
+                </div>
+
+                <div class="frequency-levels">
+                    <div class="freq-meter">
+                        <div class="freq-label">
+                            <span>BASS</span>
+                            <span class="level-value-display" id="bassValue">0%</span>
+                        </div>
+                        <div class="freq-bar-container">
+                            <div class="freq-bar bass" id="bassBar"></div>
+                        </div>
+                    </div>
+                    <div class="freq-meter">
+                        <div class="freq-label">
+                            <span>MID</span>
+                            <span class="level-value-display" id="midValue">0%</span>
+                        </div>
+                        <div class="freq-bar-container">
+                            <div class="freq-bar mid" id="midBar"></div>
+                        </div>
+                    </div>
+                    <div class="freq-meter">
+                        <div class="freq-label">
+                            <span>HIGH</span>
+                            <span class="level-value-display" id="highValue">0%</span>
+                        </div>
+                        <div class="freq-bar-container">
+                            <div class="freq-bar high" id="highBar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time-of-Day Slider - Right side, bottom -->
+    <div class="droplet-control-section">
+        <div class="control-label" id="timeIcon">
+            <!-- Sun Icon -->
+            <svg class="time-icon sun-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="15" stroke="white" stroke-width="2" fill="none"/>
+                <line x1="50" y1="10" x2="50" y2="25" stroke="white" stroke-width="2"/>
+                <line x1="50" y1="75" x2="50" y2="90" stroke="white" stroke-width="2"/>
+                <line x1="10" y1="50" x2="25" y2="50" stroke="white" stroke-width="2"/>
+                <line x1="75" y1="50" x2="90" y2="50" stroke="white" stroke-width="2"/>
+                <line x1="21" y1="21" x2="32" y2="32" stroke="white" stroke-width="2"/>
+                <line x1="68" y1="68" x2="79" y2="79" stroke="white" stroke-width="2"/>
+                <line x1="79" y1="21" x2="68" y2="32" stroke="white" stroke-width="2"/>
+                <line x1="32" y1="68" x2="21" y2="79" stroke="white" stroke-width="2"/>
+            </svg>
+            <!-- Moon Icon -->
+            <svg class="time-icon moon-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 45 25 A 15 15 0 1 1 45 75 A 12 12 0 1 0 45 25 Z" stroke="white" stroke-width="2" fill="white"/>
+            </svg>
+        </div>
+        
+        <div class="slider-container">
+            <div class="current-time-readout" id="currentTimeReadout">09:00</div>
+            <div class="slider-markers">
+                <div class="slider-marker"></div>
+                <div class="slider-marker"></div>
+                <div class="slider-marker"></div>
+                <div class="slider-marker"></div>
+                <div class="slider-marker"></div>
+            </div>
+            <span class="time-label">09:00</span>
+            <input type="range" id="gobletSlider" min="0" max="100" value="0" step="1">
+            <span class="time-label">18:00</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.ripples@0.6.3/dist/jquery.ripples.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    
+    <script>
+        let isListening = false;
+        let audioContext, analyser, source;
+        let gobletMorphing = 0;
+        let p5Instance = null;
+        let droplets = [];
+
+        // Update coordinate system time
+        function updateTimeCoord() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            $('#timeCoord').text(`${hours}:${minutes}`);
+        }
+        
+        setInterval(updateTimeCoord, 1000);
+        updateTimeCoord();
+
+        // p5.js sketch - Experimental fluid with organic tendrils and flow patterns
+        const liquidSketch = (p) => {
+            let phase = 0;
+            let playerHeight = 180;
+            const GRID_SIZE = 6;
+            const THRESHOLD = 1.0;
+            let grid = [];
+            let gridWidth, gridHeight;
+            let flowField = [];
+            
+            function initGrid() {
+                gridWidth = Math.ceil(p.width / GRID_SIZE);
+                gridHeight = Math.ceil(p.height / GRID_SIZE);
+                grid = [];
+                flowField = [];
+                for (let i = 0; i < gridWidth; i++) {
+                    grid[i] = [];
+                    flowField[i] = [];
+                    for (let j = 0; j < gridHeight; j++) {
+                        grid[i][j] = 0;
+                        flowField[i][j] = {vx: 0, vy: 0};
+                    }
+                }
+            }
+            
+            function lerp2d(p1, p2, v1, v2) {
+                if (Math.abs(v1 - v2) < 0.001) return p1;
+                let t = (THRESHOLD - v2) / (v1 - v2);
+                t = Math.max(0, Math.min(1, t));
+                return {
+                    x: p2.x + (p1.x - p2.x) * t,
+                    y: p2.y + (p1.y - p2.y) * t
+                };
+            }
+            
+            p.setup = () => {
+                const canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                canvas.parent('gobletCanvas');
+                p.noFill();
+                p.stroke(255);
+                p.strokeWeight(2);
+                initGrid();
+            };
+            
+            p.draw = () => {
+                p.clear();
+                
+                if (gobletMorphing === 0) {
+                    droplets = [];
+                    return;
+                }
+                
+                const spawnRate = p.map(gobletMorphing, 0, 100, 0.05, 0.15);
+                if (p.random() < spawnRate && droplets.length < 120) {
+                    droplets.push({
+                        x: p.random(p.width * 0.25, p.width * 0.75),
+                        y: p.random(30, 80),
+                        vx: p.random(-3, 3),
+                        vy: p.random(0, 2),
+                        radius: p.random(18, 45),
+                        mass: p.random(1, 2),
+                        settled: false,
+                        target: null,
+                        energy: 1.0
+                    });
+                }
+                
+                if (p.mouseIsPressed || (p.touches && p.touches.length > 0)) {
+                    let mx = p.mouseX;
+                    let my = p.mouseY;
+                    if (p.touches && p.touches.length > 0) {
+                        mx = p.touches[0].x;
+                        my = p.touches[0].y;
+                    }
+                    
+                    for (let i = 0; i < droplets.length; i++) {
+                        setTimeout(() => {
+                            if (droplets[i]) {
+                                droplets[i].target = {x: mx, y: my};
+                            }
+                        }, i * 30);
+                    }
+                }
+                
+                let bottomY = p.height - playerHeight;
+                for (let i = droplets.length - 1; i >= 0; i--) {
+                    let drop = droplets[i];
+                    
+                    if (!drop.settled) {
+                        if (drop.target) {
+                            let dx = drop.target.x - drop.x;
+                            let dy = drop.target.y - drop.y;
+                            drop.vx += dx * 0.0008;
+                            drop.vy += dy * 0.0008;
+                            
+                            if (Math.abs(dx) < 50 && Math.abs(dy) < 50) {
+                                drop.target = null;
+                            }
+                        } else {
+                            drop.vy += 0.3;
+                        }
+                        
+                        drop.vx *= 0.98;
+                        drop.vy *= 0.98;
+                        drop.x += drop.vx;
+                        drop.y += drop.vy;
+                        
+                        for (let other of droplets) {
+                            if (other !== drop && other.settled) {
+                                let dx = drop.x - other.x;
+                                let dy = drop.y - other.y;
+                                let dist = p.sqrt(dx * dx + dy * dy);
+                                let minDist = drop.radius + other.radius;
+                                
+                                if (dist < minDist * 0.8) {
+                                    let angle = p.atan2(dy, dx);
+                                    drop.x = other.x + p.cos(angle) * minDist;
+                                    drop.y = other.y + p.sin(angle) * minDist;
+                                    drop.settled = true;
+                                    drop.vy = 0;
+                                    drop.vx *= 0.3;
+                                    drop.target = null;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (drop.y + drop.radius >= bottomY) {
+                            drop.y = bottomY - drop.radius;
+                            drop.settled = true;
+                            drop.vy = 0;
+                            drop.vx *= 0.5;
+                            drop.target = null;
+                        }
+                        
+                        if (drop.x - drop.radius < 0) {
+                            drop.x = drop.radius;
+                            drop.vx *= -0.6;
+                        }
+                        if (drop.x + drop.radius > p.width) {
+                            drop.x = p.width - drop.radius;
+                            drop.vx *= -0.6;
+                        }
+                    } else {
+                        for (let j = i - 1; j >= 0; j--) {
+                            let other = droplets[j];
+                            if (other.settled) {
+                                let dx = other.x - drop.x;
+                                let dy = other.y - drop.y;
+                                let dist = p.sqrt(dx * dx + dy * dy);
+                                
+                                if (dist < (drop.radius + other.radius) * 0.65) {
+                                    let totalMass = drop.mass + other.mass;
+                                    drop.x = (drop.x * drop.mass + other.x * other.mass) / totalMass;
+                                    drop.y = (drop.y * drop.mass + other.y * other.mass) / totalMass;
+                                    drop.radius = p.sqrt(drop.radius * drop.radius + other.radius * other.radius);
+                                    drop.mass = totalMass;
+                                    droplets.splice(j, 1);
+                                    if (j < i) i--;
+                                    break;
+                                } else if (dist < (drop.radius + other.radius) * 1.3) {
+                                    drop.x += dx * 0.015;
+                                    drop.y += dy * 0.015;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                for (let i = 0; i < gridWidth; i++) {
+                    for (let j = 0; j < gridHeight; j++) {
+                        let x = i * GRID_SIZE;
+                        let y = j * GRID_SIZE;
+                        let value = 0;
+                        let flowX = 0, flowY = 0;
+                        
+                        for (let drop of droplets) {
+                            let dx = drop.x - x;
+                            let dy = drop.y - y;
+                            let distSq = dx * dx + dy * dy;
+                            if (distSq > 0.1) {
+                                let influence = (drop.radius * drop.radius * 1.3) / distSq;
+                                value += influence;
+                                
+                                if (distSq < drop.radius * drop.radius * 4) {
+                                    flowX += drop.vx * influence;
+                                    flowY += drop.vy * influence;
+                                }
+                            }
+                        }
+                        
+                        grid[i][j] = value;
+                        flowField[i][j] = {vx: flowX, vy: flowY};
+                    }
+                }
+                
+                p.strokeCap(p.ROUND);
+                p.strokeJoin(p.ROUND);
+                
+                for (let i = 0; i < gridWidth - 1; i++) {
+                    for (let j = 0; j < gridHeight - 1; j++) {
+                        let x = i * GRID_SIZE;
+                        let y = j * GRID_SIZE;
+                        
+                        let a = grid[i][j] >= THRESHOLD;
+                        let b = grid[i][j + 1] >= THRESHOLD;
+                        let c = grid[i + 1][j + 1] >= THRESHOLD;
+                        let d = grid[i + 1][j] >= THRESHOLD;
+                        
+                        let state = (a ? 8 : 0) | (b ? 4 : 0) | (c ? 2 : 0) | (d ? 1 : 0);
+                        
+                        if (state === 0 || state === 15) continue;
+                        
+                        let va = grid[i][j];
+                        let vb = grid[i][j + 1];
+                        let vc = grid[i + 1][j + 1];
+                        let vd = grid[i + 1][j];
+                        
+                        let corners = [
+                            {x: x, y: y},
+                            {x: x, y: y + GRID_SIZE},
+                            {x: x + GRID_SIZE, y: y + GRID_SIZE},
+                            {x: x + GRID_SIZE, y: y}
+                        ];
+                        
+                        let p1, p2;
+                        
+                        switch(state) {
+                            case 1: case 14:
+                                p1 = lerp2d(corners[3], corners[2], vd, vc);
+                                p2 = lerp2d(corners[3], corners[0], vd, va);
+                                break;
+                            case 2: case 13:
+                                p1 = lerp2d(corners[2], corners[1], vc, vb);
+                                p2 = lerp2d(corners[2], corners[3], vc, vd);
+                                break;
+                            case 3: case 12:
+                                p1 = lerp2d(corners[3], corners[0], vd, va);
+                                p2 = lerp2d(corners[2], corners[1], vc, vb);
+                                break;
+                            case 4: case 11:
+                                p1 = lerp2d(corners[1], corners[0], vb, va);
+                                p2 = lerp2d(corners[1], corners[2], vb, vc);
+                                break;
+                            case 6: case 9:
+                                p1 = lerp2d(corners[0], corners[1], va, vb);
+                                p2 = lerp2d(corners[3], corners[2], vd, vc);
+                                break;
+                            case 7: case 8:
+                                p1 = lerp2d(corners[0], corners[3], va, vd);
+                                p2 = lerp2d(corners[0], corners[1], va, vb);
+                                break;
+                        }
+                        
+                        if (p1 && p2) {
+                            let avgDensity = (va + vb + vc + vd) / 4;
+                            let weight = p.map(avgDensity, THRESHOLD, THRESHOLD * 3, 1.5, 4, true);
+                            p.strokeWeight(weight);
+                            p.stroke(255, 255, 255, 240);
+                            p.line(p1.x, p1.y, p2.x, p2.y);
+                        }
+                    }
+                }
+                
+                p.noStroke();
+                for (let i = 1; i < gridWidth - 1; i += 2) {
+                    for (let j = 1; j < gridHeight - 1; j += 2) {
+                        let value = grid[i][j];
+                        if (value > THRESHOLD * 1.3) {
+                            let x = i * GRID_SIZE + p.random(-2, 2);
+                            let y = j * GRID_SIZE + p.random(-2, 2);
+                            
+                            let dotSize = p.map(value, THRESHOLD * 1.3, THRESHOLD * 4, 2, 6, true);
+                            let alpha = p.map(value, THRESHOLD * 1.3, THRESHOLD * 4, 100, 200, true);
+                            
+                            p.fill(255, 255, 255, alpha);
+                            p.circle(x, y, dotSize);
+                        }
+                    }
+                }
+                
+                p.stroke(255, 255, 255);
+                for (let i = 2; i < gridWidth - 2; i += 3) {
+                    for (let j = 2; j < gridHeight - 2; j += 3) {
+                        let value = grid[i][j];
+                        if (value > THRESHOLD * 1.5) {
+                            let x = i * GRID_SIZE;
+                            let y = j * GRID_SIZE;
+                            
+                            let flow = flowField[i][j];
+                            let flowMag = p.sqrt(flow.vx * flow.vx + flow.vy * flow.vy);
+                            
+                            if (flowMag > 0.005) {
+                                let alpha = p.map(value, THRESHOLD * 1.5, THRESHOLD * 4, 120, 200, true);
+                                let strokeW = p.map(value, THRESHOLD * 1.5, THRESHOLD * 4, 1, 2.5, true);
+                                p.strokeWeight(strokeW);
+                                p.stroke(255, 255, 255, alpha);
+                                
+                                let dashLen = p.map(flowMag, 0, 2, 8, 18, true);
+                                let nx = flow.vx / (flowMag + 0.001);
+                                let ny = flow.vy / (flowMag + 0.001);
+                                
+                                let segments = 3;
+                                for (let s = 0; s < segments; s++) {
+                                    let startX = x + (nx * dashLen * s * 0.4);
+                                    let startY = y + (ny * dashLen * s * 0.4);
+                                    let endX = x + (nx * dashLen * (s * 0.4 + 0.25));
+                                    let endY = y + (ny * dashLen * (s * 0.4 + 0.25));
+                                    p.line(startX, startY, endX, endY);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                p.noFill();
+                for (let drop of droplets) {
+                    if (drop.settled) {
+                        let pulse = p.sin(phase * 2.5 + drop.x * 0.008) * 0.3 + 0.7;
+                        
+                        for (let r = 0; r < 3; r++) {
+                            let alpha = (pulse * 60 + 40) * (1 - r * 0.25);
+                            p.stroke(255, 255, 255, alpha);
+                            p.strokeWeight(1.2 - r * 0.3);
+                            
+                            let radius = drop.radius * 0.25 + r * 10 + pulse * 5;
+                            p.circle(drop.x, drop.y, radius);
+                        }
+                    }
+                }
+                
+                phase += 0.04;
+            };
+            
+            p.windowResized = () => {
+                p.resizeCanvas(p.windowWidth, p.windowHeight);
+                initGrid();
+            };
+        };
+
+        // Initialize water effect
+        $(document).ready(function () {
+            $('#waterBackground').css({
+                'background-image': 'url("img/img4.jpg")',
+                'background-size': 'cover',
+                'background-position': 'center',
+                'background-repeat': 'no-repeat'
+            });
+
+            try {
+                $('#waterBackground').ripples({
+                    resolution: 512,
+                    dropRadius: 25,
+                    perturbance: 0.02,
+                    interactive: true
+                });
+
+                $('#waterBackground').on('mousemove', function (e) {
+                    if (Math.random() > 0.9) {
+                        $(this).ripples('drop', e.pageX, e.pageY, 15, 0.01);
+                    }
+                });
+            } catch (e) {
+                console.log('Ripples failed:', e);
+            }
+
+            p5Instance = new p5(liquidSketch);
+        });
+
+        // Update time readout based on slider
+        $('#gobletSlider').on('input', function() {
+            gobletMorphing = parseInt($(this).val());
+            
+            // Calculate time based on slider (9AM to 6PM = 9 hours)
+            const minutes = (gobletMorphing / 100) * (9 * 60); // 9 hours in minutes
+            const hours = Math.floor(minutes / 60) + 9;
+            const mins = Math.floor(minutes % 60);
+            const timeString = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+            $('#currentTimeReadout').text(timeString);
+            
+            // Switch to moon icon after 50% (representing evening/night)
+            if (gobletMorphing > 50) {
+                $('#timeIcon').addClass('night');
+            } else {
+                $('#timeIcon').removeClass('night');
+            }
+        });
+
+        $('#playButton').click(function() {
+            if (isListening) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        });
+
+        function startListening() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    source = audioContext.createMediaStreamSource(stream);
+                    
+                    analyser.fftSize = 2048;
+                    analyser.smoothingTimeConstant = 0.85;
+                    source.connect(analyser);
+                    
+                    isListening = true;
+                    $('#playButton').addClass('active');
+                    $('#statusIndicator').addClass('active');
+                    $('#statusText').text('LISTENING');
+                    
+                    analyzeAudio();
+                })
+                .catch(function() {
+                    alert('Please allow microphone access');
+                });
+        }
+
+        function stopListening() {
+            if (source) {
+                source.disconnect();
+                if (source.mediaStream) {
+                    source.mediaStream.getTracks().forEach(track => track.stop());
+                }
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            
+            isListening = false;
+            $('#playButton').removeClass('active');
+            $('#statusIndicator').removeClass('active');
+            $('#statusText').text('STANDBY');
+            $('#levelBar').css('width', '0%');
+            $('#bassBar').css('width', '0%');
+            $('#midBar').css('width', '0%');
+            $('#highBar').css('width', '0%');
+            $('#levelValue').text('0%');
+            $('#bassValue').text('0%');
+            $('#midValue').text('0%');
+            $('#highValue').text('0%');
+        }
+
+        let lastDropTime = 0;
+
+        function analyzeAudio() {
+            if (!isListening) return;
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+
+            const sum = dataArray.reduce((a, b) => a + b, 0);
+            const audioLevel = sum / dataArray.length / 255;
+            $('#levelBar').css('width', (audioLevel * 100) + '%');
+            $('#levelValue').text(Math.round(audioLevel * 100) + '%');
+
+            const bass = dataArray.slice(0, 60).reduce((a, b) => a + b) / 60 / 255;
+            const mid = dataArray.slice(60, 200).reduce((a, b) => a + b) / 140 / 255;
+            const high = dataArray.slice(200, 400).reduce((a, b) => a + b) / 200 / 255;
+
+            $('#bassBar').css('width', (bass * 100) + '%');
+            $('#midBar').css('width', (mid * 100) + '%');
+            $('#highBar').css('width', (high * 100) + '%');
+            
+            $('#bassValue').text(Math.round(bass * 100) + '%');
+            $('#midValue').text(Math.round(mid * 100) + '%');
+            $('#highValue').text(Math.round(high * 100) + '%');
+
+            const currentTime = Date.now();
+            
+            if (audioLevel > 0.15 && currentTime - lastDropTime > 200) {
+                try {
+                    const numWaves = Math.floor(audioLevel * 2) + 1;
+                    
+                    for (let i = 0; i < numWaves; i++) {
+                        const edge = Math.floor(Math.random() * 4);
+                        let x, y;
+                        
+                        switch(edge) {
+                            case 0:
+                                x = Math.random() * window.innerWidth;
+                                y = Math.random() * 100;
+                                break;
+                            case 1:
+                                x = window.innerWidth - Math.random() * 100;
+                                y = Math.random() * window.innerHeight;
+                                break;
+                            case 2:
+                                x = Math.random() * window.innerWidth;
+                                y = window.innerHeight - Math.random() * 100;
+                                break;
+                            case 3:
+                                x = Math.random() * 100;
+                                y = Math.random() * window.innerHeight;
+                                break;
+                        }
+                        
+                        let radius = 20;
+                        if (bass > 0.3) radius = 28;
+                        else if (mid > 0.3) radius = 24;
+                        else if (high > 0.3) radius = 20;
+                        
+                        $('#waterBackground').ripples('drop', x, y, radius, 0.02);
+                    }
+                    
+                    lastDropTime = currentTime;
+                } catch(e) {}
+            }
+
+            requestAnimationFrame(analyzeAudio);
+        }
+
+        setInterval(function() {
+            if (!isListening && Math.random() > 0.98) {
+                try {
+                    $('#waterBackground').ripples('drop', 
+                        Math.random() * window.innerWidth, 
+                        Math.random() * window.innerHeight, 
+                        20, 
+                        0.02
+                    );
+                } catch(e) {}
+            }
+        }, 600);
+    </script>
+</body>
+</html>

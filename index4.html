@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atheneum</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #f5f3ed;
+            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .node {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .node:hover {
+            transform: scale(1.1);
+        }
+        
+        .node-circle {
+            fill: #000;
+        }
+        
+        .node-text {
+            fill: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        
+        .memory-line {
+            stroke: #000;
+            stroke-width: 0.5;
+            fill: none;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        
+        .memory-line.visible {
+            opacity: 0.25;
+        }
+        
+        .memory-text {
+            font-size: 9px;
+            fill: #1a1a1a;
+            opacity: 0;
+            transition: opacity 1s ease;
+            font-weight: 400;
+        }
+        
+        .memory-text.visible {
+            opacity: 0.8;
+        }
+        
+        .title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #333;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        .info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: #666;
+            z-index: 1000;
+            pointer-events: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">PERSONALIZING THE IMPERSONAL</div>
+    
+    <div id="canvas">
+        <svg id="map" viewBox="0 0 1600 1000"></svg>
+    </div>
+    
+    <div class="info">
+        <span id="revealed">0</span> / <span id="total">0</span> memories revealed<br>
+        hover nodes · click to expand · wait and watch
+    </div>
+
+    <script>
+        const svg = document.getElementById('map');
+        const revealedEl = document.getElementById('revealed');
+        const totalEl = document.getElementById('total');
+        const cx = 800, cy = 500;
+        
+        let revealedCount = 0;
+        let autoRevealTimer = 0;
+        
+        const nodes = [
+            { id: '01', x: 0, y: -70, name: 'CHAIR 01',
+              memories: [
+                'Tuesday mornings', 'perfect light', 'reading Whitman', 'window seat',
+                'Brown students', 'Benefit Street', 'green velvet', 'oak 1892',
+                'morning ritual', 'quiet corner', 'sunlight', 'seasons change'
+              ]
+            },
+            { id: '02', x: -70, y: -35, name: 'FIREPLACE',
+              memories: [
+                'grandfather 1952', 'warmest spot', 'winter refuge', 'original 1836',
+                'leather worn', 'family tradition', 'stories told', 'living memory',
+                'crackling fire', 'old photographs', 'unchanged'
+              ]
+            },
+            { id: '03', x: -75, y: 30, name: 'TABLE',
+              memories: [
+                'Thursday 6pm', 'study groups', 'friendships', 'philosophy',
+                'shared texts', 'debates', 'community', 'lifelong bonds',
+                'coffee after', 'minds meet', 'ideas bloom'
+              ]
+            },
+            { id: '04', x: -35, y: 75, name: 'CORNER',
+              memories: [
+                'hidden refuge', 'afternoon', 'lost in books', 'poetry',
+                'time dissolves', 'sanctuary', 'soft cushions', 'quiet',
+                'personal haven', 'meditation'
+              ]
+            },
+            { id: '05', x: 35, y: 80, name: 'ARCHIVE',
+              memories: [
+                'PhD years', 'deep research', 'dissertation', 'late nights',
+                'breakthrough', 'note cards', 'concentration', 'scholar',
+                'academic home', 'discovery'
+              ]
+            },
+            { id: '06', x: 75, y: 40, name: 'WINDOW 03',
+              memories: [
+                'first visit 1987', 'discovered', 'regular spot', 'unchanged',
+                'alumni return', 'graduation', 'nostalgia', 'milestone',
+                'coming home', 'decades later'
+              ]
+            },
+            { id: '07', x: 70, y: -25, name: 'NOOK',
+              memories: [
+                'velvet cushions', 'afternoon naps', 'poetry reading', 'soft light',
+                'hidden corner', 'retreat', 'book lover', 'silent', 'dream'
+              ]
+            },
+            { id: '08', x: 30, y: -70, name: 'DESK 12',
+              memories: [
+                'catalog research', 'index cards', 'handwritten', 'cross-reference',
+                'archive dive', 'rare books', 'preservation', 'scholar work'
+              ]
+            }
+        ];
+        
+        const allMemories = [];
+        let totalMemories = 0;
+        
+        // Create nodes and memories
+        nodes.forEach((node, nodeIndex) => {
+            const nodeX = cx + node.x;
+            const nodeY = cy + node.y;
+            
+            // Node
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.classList.add('node');
+            g.dataset.nodeId = node.id;
+            
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', nodeX);
+            circle.setAttribute('cy', nodeY);
+            circle.setAttribute('r', '18');
+            circle.classList.add('node-circle');
+            g.appendChild(circle);
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', nodeX);
+            text.setAttribute('y', nodeY + 3);
+            text.classList.add('node-text');
+            text.textContent = node.id;
+            g.appendChild(text);
+            
+            svg.appendChild(g);
+            
+            // Memories
+            node.memories.forEach((memory, i) => {
+                const angle = (i / node.memories.length) * Math.PI * 2 - Math.PI / 2;
+                const dist = 100 + Math.random() * 100;
+                const memX = nodeX + Math.cos(angle) * dist;
+                const memY = nodeY + Math.sin(angle) * dist;
+                
+                // Line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', nodeX);
+                line.setAttribute('y1', nodeY);
+                line.setAttribute('x2', memX);
+                line.setAttribute('y2', memY);
+                line.classList.add('memory-line');
+                line.dataset.nodeId = node.id;
+                svg.appendChild(line);
+                
+                // Text
+                const memText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                memText.setAttribute('x', memX);
+                memText.setAttribute('y', memY);
+                memText.setAttribute('text-anchor', 'middle');
+                const angleDeg = (angle * 180 / Math.PI) + 90;
+                const finalAngle = angleDeg > 90 && angleDeg < 270 ? angleDeg + 180 : angleDeg;
+                memText.setAttribute('transform', `rotate(${finalAngle} ${memX} ${memY})`);
+                memText.classList.add('memory-text');
+                memText.dataset.nodeId = node.id;
+                memText.textContent = memory;
+                svg.appendChild(memText);
+                
+                allMemories.push({ line, memText, nodeId: node.id, revealed: false });
+                totalMemories++;
+            });
+            
+            // Interactions
+            g.addEventListener('click', () => revealNode(node.id));
+            g.addEventListener('mouseenter', () => highlightNode(node.id));
+        });
+        
+        totalEl.textContent = totalMemories;
+        
+        function revealNode(nodeId) {
+            allMemories.forEach(mem => {
+                if (mem.nodeId === nodeId && !mem.revealed) {
+                    mem.revealed = true;
+                    mem.line.classList.add('visible');
+                    setTimeout(() => {
+                        mem.memText.classList.add('visible');
+                        revealedCount++;
+                        revealedEl.textContent = revealedCount;
+                    }, 300);
+                }
+            });
+        }
+        
+        function highlightNode(nodeId) {
+            const alreadyRevealed = allMemories.filter(m => m.nodeId === nodeId && m.revealed).length;
+            if (alreadyRevealed === 0) {
+                // Reveal one on hover
+                const unrevealed = allMemories.filter(m => m.nodeId === nodeId && !m.revealed);
+                if (unrevealed.length > 0) {
+                    const mem = unrevealed[0];
+                    mem.revealed = true;
+                    mem.line.classList.add('visible');
+                    setTimeout(() => {
+                        mem.memText.classList.add('visible');
+                        revealedCount++;
+                        revealedEl.textContent = revealedCount;
+                    }, 200);
+                }
+            }
+        }
+        
+        // Auto-reveal over time
+        setInterval(() => {
+            if (revealedCount < totalMemories) {
+                const unrevealed = allMemories.filter(m => !m.revealed);
+                if (unrevealed.length > 0) {
+                    const random = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+                    random.revealed = true;
+                    random.line.classList.add('visible');
+                    setTimeout(() => {
+                        random.memText.classList.add('visible');
+                        revealedCount++;
+                        revealedEl.textContent = revealedCount;
+                    }, 300);
+                }
+            }
+        }, 3000);
+        
+        // Reveal first few immediately
+        setTimeout(() => {
+            const firstNode = nodes[0];
+            revealNode(firstNode.id);
+        }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Providence Athenaeum - Mapping Knowledge</title>
+    <style>
+        /* Custom Fonts - Affairs and Monument Grotesk Mono */
+        @font-face {
+            font-family: 'Affairs';
+            src: url("fonts/AffairsTest-Regular.otf") format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Monument Grotesk Mono';
+            src: url("fonts/ABCMonumentGroteskMono-Regular-Trial.otf") format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        :root {
+            --white: #ffffff;
+            --black: #000000;
+            --gray: #808080;
+        }
+
+        body {
+            font-family: 'Affairs', serif;
+            background: var(--black);
+            color: var(--white);
+            overflow-x: hidden;
+        }
+
+        /* Custom Cursor */
+        .cursor {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--white);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.2s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.hover {
+            transform: scale(1.5);
+        }
+
+        /* Noise Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            z-index: 1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 100;
+            mix-blend-mode: difference;
+        }
+
+        .nav-left, .nav-right {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .menu-toggle {
+            cursor: pointer;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: none;
+            border: none;
+            color: var(--white);
+            padding: 0;
+            transition: opacity 0.3s ease;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .menu-toggle:hover {
+            opacity: 0.5;
+        }
+
+        /* Fullscreen Menu */
+        .fullscreen-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: var(--white);
+            color: var(--black);
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+
+        .fullscreen-menu.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .menu-items {
+            list-style: none;
+        }
+
+        .menu-items li {
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .menu-items a {
+            color: var(--black);
+            text-decoration: none;
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 300;
+            display: inline-block;
+            transition: transform 0.3s ease;
+            letter-spacing: -2px;
+            font-family: 'Affairs', serif;
+        }
+
+        .menu-items a:hover {
+            transform: skewX(-5deg);
+        }
+
+        /* Scattered Image Thumbnails */
+        .thumbnail-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .thumbnail {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border: 1px solid var(--white);
+            pointer-events: all;
+            overflow: hidden;
+            background: var(--black);
+            will-change: transform;
+            transition: border 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .thumbnail.dragging {
+            z-index: 10;
+            opacity: 0.7;
+        }
+
+        .thumbnail:hover {
+            border-width: 2px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            z-index: 10;
+        }
+
+        .thumbnail.dragging:hover {
+            border-width: 1px;
+            box-shadow: none;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .thumbnail:hover img {
+            opacity: 1;
+        }
+
+        .thumbnail-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: var(--white);
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 0.6rem;
+            padding: 0.5rem;
+            text-align: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        /* Stacked Images in Center */
+        .stacked-images {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .stacked-image {
+            position: absolute;
+            width: 70vw;
+            height: 70vh;
+            border: 2px solid var(--white);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+            background: var(--black);
+            padding: 1rem;
+            transition: box-shadow 0.2s ease, opacity 0.2s ease;
+            will-change: transform;
+        }
+
+    
+
+        .stacked-image.dragging {
+            opacity: 0.95;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .stacked-image.dragging img {
+            opacity: 0.9;
+        }
+
+        .stacked-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .stacked-image-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 35px;
+            height: 35px;
+            background: transparent;
+            color: var(--white);
+            border: 1px solid var(--white);
+            border-radius: 50%;
+            cursor: pointer;
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            line-height: 1;
+            font-weight: 300;
+            opacity: 0.7;
+        }
+
+        .stacked-image-close:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+            background: var(--white);
+            color: var(--black);
+        }
+
+       .stacked-image-label {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;  /* Allows wrapping */
+    text-align: left;
+    font-family: 'Monument Grotesk Mono', monospace;
+    font-size: 0.5rem;  /* Smaller for long captions */
+    letter-spacing: 0.5px;  /* Tighter */
+    text-transform: uppercase;
+    color: var(--white);
+    pointer-events: none;
+    mix-blend-mode: difference;
+    line-height: 1.4;  /* Better line spacing for multi-line */
+    opacity: 0.8;  /* Subtle */
+    max-width: 30%;  /* Prevents stretching across entire width */
+}
+
+        /* Image Controls inside each image */
+        .image-controls-inner {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            z-index: 1000;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-controls-inner:hover {
+            opacity: 1;
+        }
+
+        .control-btn-inner {
+            background: transparent;
+            border: 1px solid var(--white);
+            color: var(--white);
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .control-btn-inner:hover {
+            background: var(--white);
+            color: var(--black);
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 3rem 3rem;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 9vw, 7rem);
+            font-weight: 400;
+            line-height: 0.8;
+            letter-spacing: 0.01em;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            font-family: 'Affairs', serif;
+            margin-bottom: 3rem;
+        }
+
+        .hero-title.kinetic {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .word-line {
+            display: flex;
+            overflow: visible;
+            position: relative;
+            white-space: nowrap;
+            justify-content: center;
+        }
+
+        .word-line.line-1 {
+            transform: translateX(0);
+        }
+
+        .word-line.line-2 {
+            margin-bottom: 0;
+            transform: translateX(0);
+            font-size: 0.9em;
+        }
+
+        .word-line.line-3 {
+            transform: translateX(0);
+        }
+
+        .word-line .char {
+            display: inline-block;
+            position: relative;
+            animation: floatUnique calc(10s + var(--random) * 6s) ease-in-out infinite,
+                       fadeInOut calc(10s + var(--random) * 6s) ease-in-out infinite;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation-fill-mode: backwards;
+            opacity: 1 !important;
+        }
+
+        @keyframes initialHold {
+            0%, 100% {
+                opacity: 1;
+            }
+        }
+
+        .hero-title.kinetic {
+            animation: initialHold 4s ease-in-out forwards;
+        }
+
+        .word-line .char.hover-active {
+            animation: none !important;
+        }
+
+        .word-line .char {
+            position: relative;
+            transition: filter 0.3s ease;
+        }
+
+        .word-line .char:hover {
+            filter: blur(8px) contrast(10);
+            transform: scale(1.5);
+            z-index: 10;
+        }
+
+        .word-line .char::before {
+            content: attr(data-char);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            filter: blur(10px);
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .word-line .char:hover::before {
+            opacity: 0.9;
+            animation: blobPulse 0.6s ease-in-out infinite;
+        }
+
+        @keyframes blobPulse {
+            0%, 100% {
+                filter: blur(10px);
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                filter: blur(15px);
+                transform: translate(-50%, -50%) scale(1.3);
+            }
+        }
+
+        @keyframes floatUnique {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                letter-spacing: 0;
+            }
+            15% {
+                transform: translate(
+                    calc((var(--index) - 6) * 8px + sin(var(--random) * 6.28) * 15px),
+                    calc(cos(var(--random) * 3.14) * 25px)
+                ) rotate(calc(var(--random) * 6deg - 3deg));
+            }
+            30% {
+                transform: translate(
+                    calc((var(--index) - 6) * 12px + cos(var(--random) * 4.71) * 25px),
+                    calc(sin(var(--random) * 5.5) * 40px)
+                ) rotate(calc(var(--random) * -10deg + 5deg));
+            }
+            50% {
+                transform: translate(
+                    calc((var(--index) - 6) * 18px + sin(var(--random) * 7.85) * 35px),
+                    calc(cos(var(--random) * 2.35) * 60px)
+                ) rotate(calc(var(--random) * 15deg - 7deg));
+            }
+            70% {
+                transform: translate(
+                    calc((var(--index) - 6) * 12px + cos(var(--random) * 3.5) * 25px),
+                    calc(sin(var(--random) * 6.2) * 40px)
+                ) rotate(calc(var(--random) * -12deg + 6deg));
+            }
+            85% {
+                transform: translate(
+                    calc((var(--index) - 6) * 8px + sin(var(--random) * 4.2) * 15px),
+                    calc(cos(var(--random) * 1.8) * 25px)
+                ) rotate(calc(var(--random) * 8deg - 4deg));
+            }
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+                letter-spacing: 0;
+            }
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 1;
+            }
+            30% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+            55% {
+                opacity: 0;
+            }
+            55.01% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .hero-subtitle {
+            font-size: clamp(0.75rem, 1.2vw, 1rem);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            font-weight: 400;
+            font-family: 'Monument Grotesk Mono', monospace;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            max-width: 90%;
+            display: block;
+        }
+
+        .hero-title.scattered .char {
+            display: inline-block;
+            animation: floatIn 1.5s ease-out forwards;
+            opacity: 0;
+            animation-delay: var(--delay);
+        }
+
+        @keyframes floatIn {
+            0% {
+                opacity: 0;
+                transform: translate(
+                    calc(var(--delay) * 100px - 50px),
+                    calc(var(--delay) * -80px + 40px)
+                ) rotate(calc(var(--delay) * 180deg - 90deg));
+            }
+            100% {
+                opacity: 1;
+                transform: translate(0, 0) rotate(0deg);
+            }
+        }
+
+        .spiral-ornament {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            pointer-events: none;
+            opacity: 0.12;
+            z-index: 0;
+            animation: gentleFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes gentleFloat {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            50% { transform: translate(-50%, -52%) rotate(5deg); }
+        }
+
+        .spiral-ornament svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .spiral-ornament .spiral-line {
+            stroke: var(--white);
+            fill: none;
+            stroke-width: 1;
+            stroke-linecap: round;
+        }
+
+        .spiral-ornament .spiral-dot {
+            fill: var(--white);
+        }
+
+        .viz-ornament {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            width: 200px;
+            height: 200px;
+            opacity: 0;
+            transition: all 0.6s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .viz-item:hover .viz-ornament {
+            opacity: 0.15;
+            transform: translate(-50%, -50%) scale(1) rotate(180deg);
+        }
+
+        .lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .line {
+            position: absolute;
+            background: var(--white);
+            opacity: 0.3;
+        }
+
+        .line.vertical {
+            width: 1px;
+            height: 100%;
+            animation: slideDown 20s infinite linear;
+        }
+
+        .line.horizontal {
+            height: 1px;
+            width: 100%;
+            animation: slideRight 25s infinite linear;
+        }
+
+        @keyframes slideDown {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        @keyframes slideRight {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100vw); }
+        }
+
+        .blueprint-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.08;
+        }
+
+        .blueprint-grid svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .arch-element {
+            position: fixed;
+            stroke: var(--white);
+            fill: none;
+            stroke-width: 1;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .arch-circle-1 {
+            top: 15%;
+            right: 10%;
+            width: 200px;
+            height: 200px;
+            animation: rotateBlueprint 40s linear infinite;
+        }
+
+        .arch-circle-2 {
+            bottom: 20%;
+            left: 8%;
+            width: 150px;
+            height: 150px;
+            animation: rotateBlueprint 50s linear infinite reverse;
+        }
+
+        .arch-rect {
+            top: 60%;
+            right: 15%;
+            width: 180px;
+            height: 120px;
+            animation: fadeInOut 8s ease-in-out infinite;
+        }
+
+        .arch-diagonal {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            top: 30%;
+            left: 5%;
+            opacity: 0.2;
+            animation: rotateBlueprint 60s linear infinite;
+        }
+
+        @keyframes rotateBlueprint {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.12; }
+            50% { opacity: 0.05; }
+        }
+
+        .dimension-line {
+            position: fixed;
+            stroke: var(--white);
+            stroke-width: 1;
+            opacity: 0.1;
+            pointer-events: none;
+            animation: dashMove 3s linear infinite;
+        }
+
+        @keyframes dashMove {
+            to { stroke-dashoffset: -20; }
+        }
+
+        .data-section {
+            padding: 10rem 3rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .ornament-pattern {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            pointer-events: none;
+            opacity: 0.08;
+        }
+
+        .ornament-pattern.top-left {
+            top: 5%;
+            left: 5%;
+            background-image: 
+                radial-gradient(circle at 30% 30%, transparent 40%, var(--white) 40%, var(--white) 41%, transparent 41%),
+                radial-gradient(circle at 60% 50%, transparent 25%, var(--white) 25%, var(--white) 26%, transparent 26%),
+                radial-gradient(circle at 45% 70%, transparent 15%, var(--white) 15%, var(--white) 16%, transparent 16%);
+            animation: spiralRotate 40s linear infinite;
+        }
+
+        .ornament-pattern.bottom-right {
+            bottom: 5%;
+            right: 5%;
+            background-image: 
+                radial-gradient(circle at 70% 70%, transparent 40%, var(--white) 40%, var(--white) 41%, transparent 41%),
+                radial-gradient(circle at 40% 50%, transparent 25%, var(--white) 25%, var(--white) 26%, transparent 26%),
+                radial-gradient(circle at 55% 30%, transparent 15%, var(--white) 15%, var(--white) 16%, transparent 16%);
+            animation: spiralRotate 50s linear infinite reverse;
+        }
+
+        @keyframes spiralRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .section-header {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 4rem;
+            opacity: 0.7;
+            text-align: center;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .viz-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+            border: 1px solid var(--white);
+        }
+
+        .viz-item {
+            aspect-ratio: 1;
+            border: 1px solid var(--white);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: background 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .viz-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            transform: scaleY(0);
+            transform-origin: bottom;
+            transition: transform 0.5s ease;
+            z-index: 0;
+        }
+
+        .viz-item:hover::before {
+            transform: scaleY(1);
+            transform-origin: top;
+        }
+
+        .viz-item:hover {
+            color: var(--black);
+        }
+
+        .viz-number {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .viz-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .viz-title {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+            font-weight: 400;
+            font-family: 'Affairs', serif;
+        }
+
+        .viz-desc {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            line-height: 1.6;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+        
+        .viz-btn {
+    background: transparent;
+    border: 2px solid var(--black);  /* Thicker border - was 1px */
+    color: var(--black);
+    font-family: 'Monument Grotesk Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0.7rem;
+    white-space: nowrap;
+    opacity: 0.9;  /* Slightly visible always */
+}
+
+.viz-btn:hover {
+    background: var(--black);
+    color: var(--white);
+    opacity: 1;
+}
+
+.viz-item:hover .viz-btn {
+    border-color: var(--black);  /* Keep black border on hover */
+    color: var(--black);
+    background: rgba(255, 255, 255, 0.9);  /* Slight white background */
+    opacity: 1;
+}
+
+.viz-item:hover .viz-btn:hover {
+    background: var(--black);
+    color: var(--white);
+    border-color: var(--black);
+}
+
+        .side-panel {
+    position: fixed;
+    right: -100%;
+    top: 0;
+    width: 50vw;  /* Changed back from 100vw */
+    height: 100vh;
+    background: var(--white);
+    color: var(--black);
+    z-index: 101;
+    transition: right 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+    overflow-y: auto;
+}
+
+        .side-panel.active {
+            right: 0;
+        }
+
+        .panel-header {
+    padding: 1rem 3rem;  /* Even tighter */
+    display: flex;
+    justify-content: flex-end;
+    border-bottom: 1px solid var(--black);
+}
+
+        .close-panel {
+            cursor: pointer;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: none;
+            border: none;
+            color: var(--black);
+            transition: opacity 0.3s ease;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .close-panel:hover {
+            opacity: 0.5;
+        }
+
+        .panel-content {
+    padding: 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 60vh;
+}
+          
+        .panel-title {
+            font-size: clamp(2rem, 5vw, 4rem);
+            margin-bottom: 2rem;
+            letter-spacing: -2px;
+            font-weight: 300;
+            font-family: 'Affairs', serif;
+        }
+
+        .panel-meta {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 3rem;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .panel-text {
+    font-size: 1.25rem;  /* Bigger text - increased from 1rem */
+    line-height: 1.3;    /* Smaller leading - decreased from 1.8 */
+    margin-bottom: 2rem;
+    font-family: 'Affairs', serif;
+    user-select: text;
+}
+.panel-data-btn {
+    background: transparent;
+    border: 2px solid var(--black);
+    color: var(--black);
+    font-family: 'Monument Grotesk Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 1rem 2.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;  /* Add this line - space after button */
+    white-space: nowrap;
+}
+.panel-data-btn:hover {
+    background: var(--black);
+    color: var(--white);
+}
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .data-item {
+            border: 1px solid var(--black);
+            padding: 2rem;
+        }
+
+        .data-value {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+            letter-spacing: -2px;
+            font-family: 'Affairs', serif;
+        }
+
+        .data-label {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            font-family: 'Monument Grotesk Mono', monospace;
+        }
+
+        .info-strip {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: var(--black);
+            z-index: 102;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+            border-top: 1px solid var(--white);
+        }
+
+        .info-strip:hover {
+            background: var(--white);
+        }
+
+        .info-strip-label {
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--white);
+            transition: color 0.3s ease;
+        }
+
+        .info-strip:hover .info-strip-label {
+            color: var(--black);
+        }
+
+        .info-panel {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 60vh;
+            background: var(--white);
+            color: var(--black);
+            z-index: 101;
+            transition: bottom 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+            overflow-y: auto;
+            padding: 3rem;
+            border-top: 1px solid var(--black);
+        }
+
+        .info-panel.active {
+            bottom: 40px;
+        }
+
+        .info-panel-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4rem;
+        }
+
+        .info-panel h3 {
+            font-family: 'Affairs', serif;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+        }
+
+        .info-panel p {
+            font-family: 'Affairs', serif;
+            font-size: 1rem;
+            line-height: 1.35;
+            margin-bottom: 1.5rem;
+            user-select: text;
+        }
+
+        .info-panel .info-meta {
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            margin-bottom: 2rem;
+        }
+
+        .info-section {
+            margin-bottom: 2rem;
+        }
+        .quote-highlight {
+    margin: 2.5rem 0;
+    padding: 1.5rem;
+    border-left: 3px solid var(--black);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.quote-highlight p {
+    font-size: 1.3rem;
+    font-style: italic;
+    margin-bottom: 0;
+    opacity: 0.9;
+}
+
+.credits-text {
+    line-height: 1.6;
+}
+
+.credits-text strong {
+    font-family: 'Monument Grotesk Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    font-weight: 400;
+}
+
+        .info-section-title {
+            font-family: 'Monument Grotesk Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 1.5rem;
+            }
+
+            .data-section {
+                padding: 5rem 1.5rem;
+            }
+
+            .viz-item {
+                padding: 2rem;
+            }
+
+            .panel-content {
+                padding: 2rem;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-panel {
+                width: 100%;
+                right: -100%;
+                height: 70vh;
+            }
+
+            .info-panel.active {
+                right: 40px;
+            }
+
+            .info-panel-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .word-line.line-1,
+            .word-line.line-2,
+            .word-line.line-3 {
+                transform: translateX(0);
+            }
+
+            .thumbnail {
+                width: 120px;
+                height: 120px;
+            }
+
+            .thumbnail:nth-child(1), .thumbnail:nth-child(2) {
+                left: -60px !important;
+            }
+
+            .thumbnail:nth-child(3), .thumbnail:nth-child(4) {
+                right: -60px !important;
+            }
+
+            .thumbnail:nth-child(5), .thumbnail:nth-child(6) {
+                top: -60px !important;
+            }
+
+            .thumbnail:nth-child(7), .thumbnail:nth-child(8) {
+                bottom: -60px !important;
+            }
+
+            .stacked-image {
+                width: 85vw;
+                height: 75vh;
+            }
+
+            .control-btn-inner {
+                font-size: 0.55rem;
+                padding: 0.4rem 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor"></div>
+
+    <!-- Scattered Thumbnails -->
+    <div class="thumbnail-container" id="thumbnailContainer"></div>
+
+    <!-- Stacked Images Container -->
+    <div class="stacked-images" id="stackedImages"></div>
+
+    <div class="lines">
+        <div class="line vertical" style="left: 20%;"></div>
+        <div class="line vertical" style="left: 50%;"></div>
+        <div class="line vertical" style="left: 80%;"></div>
+        <div class="line horizontal" style="top: 30%;"></div>
+        <div class="line horizontal" style="top: 70%;"></div>
+    </div>
+
+    <div class="blueprint-grid">
+        <svg xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="smallGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="white" stroke-width="0.5" opacity="0.5"/>
+                </pattern>
+                <pattern id="grid" width="150" height="150" patternUnits="userSpaceOnUse">
+                    <rect width="150" height="150" fill="url(#smallGrid)"/>
+                    <path d="M 150 0 L 0 0 0 150" fill="none" stroke="white" stroke-width="0.8" opacity="0.6"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+    </div>
+
+    <svg class="arch-element arch-circle-1" viewBox="0 0 500 500" style="top: 8%; right: 8%; width: 500px; height: 500px;">
+        <g opacity="0.8">
+            <line x1="50" y1="50" x2="200" y2="50" stroke-width="1"/>
+            <line x1="300" y1="50" x2="450" y2="50" stroke-width="1"/>
+            <line x1="50" y1="50" x2="50" y2="200" stroke-width="1"/>
+            <line x1="450" y1="50" x2="450" y2="200" stroke-width="1"/>
+            <rect x="80" y="80" width="100" height="100" stroke-width="0.8"/>
+            <rect x="220" y="100" width="80" height="120" stroke-width="0.8"/>
+            <rect x="330" y="70" width="90" height="90" stroke-width="0.8"/>
+            <line x1="80" y1="80" x2="180" y2="180" stroke-width="0.6" stroke-dasharray="4,6" opacity="0.6"/>
+            <line x1="220" y1="100" x2="300" y2="220" stroke-width="0.6" stroke-dasharray="4,6" opacity="0.6"/>
+            <circle cx="250" cy="250" r="120" stroke-width="0.8"/>
+            <circle cx="250" cy="250" r="80" stroke-width="0.7"/>
+            <circle cx="250" cy="250" r="40" stroke-width="0.6"/>
+            <line x1="250" y1="130" x2="250" y2="180" stroke-width="0.6"/>
+            <line x1="370" y1="250" x2="320" y2="250" stroke-width="0.6"/>
+            <line x1="180" y1="180" x2="210" y2="210" stroke-width="0.6"/>
+            <g opacity="0.7">
+                <line x1="70" y1="200" x2="70" y2="280" stroke-width="0.6" stroke-dasharray="5,5"/>
+                <line x1="65" y1="200" x2="75" y2="200" stroke-width="0.8"/>
+                <line x1="65" y1="280" x2="75" y2="280" stroke-width="0.8"/>
+            </g>
+            <line x1="90" y1="80" x2="110" y2="80" stroke-width="1.5"/>
+            <line x1="150" y1="80" x2="170" y2="80" stroke-width="1.5"/>
+        </g>
+    </svg>
+
+    <svg class="arch-element arch-circle-2" viewBox="0 0 400 550" style="bottom: 5%; left: 5%; width: 400px; height: 550px;">
+        <g opacity="0.8">
+            <line x1="40" y1="500" x2="160" y2="500" stroke-width="1"/>
+            <line x1="200" y1="500" x2="360" y2="500" stroke-width="1"/>
+            <g>
+                <rect x="60" y="350" width="120" height="130" stroke-width="0.8"/>
+                <rect x="80" y="370" width="35" height="80" stroke-width="0.7"/>
+                <rect x="125" y="370" width="35" height="80" stroke-width="0.7"/>
+            </g>
+            <g transform="translate(20, -30)">
+                <rect x="80" y="250" width="120" height="130" stroke-width="0.8"/>
+                <rect x="100" y="270" width="35" height="80" stroke-width="0.7"/>
+                <rect x="145" y="270" width="35" height="80" stroke-width="0.7"/>
+            </g>
+            <line x1="50" y1="200" x2="200" y2="100" stroke-width="0.8"/>
+            <line x1="200" y1="100" x2="350" y2="200" stroke-width="0.8"/>
+            <line x1="170" y1="130" x2="230" y2="130" stroke-width="0.6" stroke-dasharray="6,6" opacity="0.7"/>
+            <line x1="120" y1="500" x2="120" y2="220" stroke-width="0.6" stroke-dasharray="4,8" opacity="0.5"/>
+            <line x1="200" y1="500" x2="200" y2="100" stroke-width="0.6" stroke-dasharray="4,8" opacity="0.5"/>
+            <line x1="280" y1="500" x2="280" y2="220" stroke-width="0.6" stroke-dasharray="4,8" opacity="0.5"/>
+            <path d="M 150 480 Q 200 460 250 480" fill="none" stroke-width="0.6" opacity="0.6"/>
+        </g>
+    </svg>
+
+    <svg class="arch-element arch-rect" viewBox="0 0 450 350" style="top: 50%; right: 5%; width: 450px; height: 350px;">
+        <g opacity="0.8">
+            <line x1="50" y1="200" x2="250" y2="200" stroke-width="0.8"/>
+            <line x1="300" y1="200" x2="400" y2="200" stroke-width="0.8"/>
+            <line x1="70" y1="120" x2="220" y2="120" stroke-width="0.8" stroke-dasharray="8,8" opacity="0.7"/>
+            <line x1="280" y1="120" x2="380" y2="120" stroke-width="0.8" stroke-dasharray="8,8" opacity="0.7"/>
+            <rect x="100" y="50" width="8" height="280" stroke-width="0.7" opacity="0.7"/>
+            <rect x="220" y="70" width="8" height="260" stroke-width="0.7" opacity="0.7"/>
+            <rect x="340" y="60" width="8" height="270" stroke-width="0.7" opacity="0.7"/>
+            <rect x="130" y="140" width="60" height="50" stroke-width="0.7"/>
+            <rect x="260" y="150" width="50" height="40" stroke-width="0.7"/>
+            <line x1="160" y1="120" x2="160" y2="140" stroke-width="0.5" opacity="0.6"/>
+            <line x1="285" y1="120" x2="285" y2="150" stroke-width="0.5" opacity="0.6"/>
+            <circle cx="375" cy="250" r="40" stroke-width="0.7"/>
+            <circle cx="375" cy="250" r="25" stroke-width="0.6"/>
+        </g>
+    </svg>
+
+    <svg class="arch-element arch-diagonal" viewBox="0 0 400 400" style="top: 20%; left: 2%; width: 400px; height: 400px;">
+        <g opacity="0.8">
+            <circle cx="200" cy="200" r="150" stroke-width="0.8"/>
+            <circle cx="200" cy="200" r="120" stroke-width="0.7" stroke-dasharray="8,8"/>
+            <circle cx="200" cy="200" r="90" stroke-width="0.7"/>
+            <circle cx="200" cy="200" r="60" stroke-width="0.6" stroke-dasharray="5,5"/>
+            <line x1="200" y1="50" x2="200" y2="140" stroke-width="0.7"/>
+            <line x1="200" y1="260" x2="200" y2="350" stroke-width="0.7"/>
+            <line x1="50" y1="200" x2="140" y2="200" stroke-width="0.7"/>
+            <line x1="260" y1="200" x2="350" y2="200" stroke-width="0.7"/>
+            <line x1="80" y1="80" x2="150" y2="150" stroke-width="0.5" stroke-dasharray="4,6" opacity="0.6"/>
+            <line x1="320" y1="80" x2="250" y2="150" stroke-width="0.5" stroke-dasharray="4,6" opacity="0.6"/>
+            <rect x="170" y="170" width="60" height="60" stroke-width="0.7"/>
+            <circle cx="200" cy="100" r="15" stroke-width="0.6"/>
+            <circle cx="200" cy="300" r="15" stroke-width="0.6"/>
+            <circle cx="100" cy="200" r="12" stroke-width="0.6"/>
+            <circle cx="300" cy="200" r="12" stroke-width="0.6"/>
+            <path d="M 230 170 A 30 30 0 0 1 230 230" fill="none" stroke-width="0.5" opacity="0.5"/>
+        </g>
+    </svg>
+
+    <svg class="dimension-line" style="top: 25%; left: 30%; width: 40%;" viewBox="0 0 400 20">
+        <line x1="0" y1="10" x2="400" y2="10" stroke-dasharray="5,5" />
+        <line x1="0" y1="5" x2="0" y2="15" />
+        <line x1="400" y1="5" x2="400" y2="15" />
+    </svg>
+
+    <svg class="dimension-line" style="top: 45%; right: 20%; width: 2%; height: 30%;" viewBox="0 0 20 300">
+        <line x1="10" y1="0" x2="10" y2="300" stroke-dasharray="5,5" />
+        <line x1="5" y1="0" x2="15" y2="0" />
+        <line x1="5" y1="300" x2="15" y2="300" />
+    </svg>
+
+    <nav>
+        <div class="nav-left">
+            <div class="nav-item">[ * ]</div>
+            <a class="nav-item" href="https://www.google.com/maps/search/?api=1&query=41.8258,-71.4064" target="_blank" rel="noopener" style="text-decoration: none; color: inherit; cursor: pointer;">41.8258° N, 71.4064° W</a>
+        </div>
+        <div class="nav-right">
+            <button class="menu-toggle" onclick="toggleMenu()">[ Menu ]</button>
+            <div class="nav-item">2025</div>
+        </div>
+    </nav>
+
+    <div class="fullscreen-menu">
+        <ul class="menu-items">
+            <li><a href="index3.html" onclick="toggleMenu()">Come Hither</a></li>
+            <li><a href="index2.html" onclick="toggleMenu()">Investigate</a></li>
+            <li><a href="Chair web" onclick="toggleMenu()">Sanctuary</a></li>
+            <li><a href="index.html" onclick="toggleMenu()">Correspondnce</a></li>
+        </ul>
+    </div>
+
+    <section class="hero">
+        <h1 class="hero-title kinetic" id="kineticText">
+            <div class="word-line line-1">Personalizing</div>
+            <div class="word-line line-2">the</div>
+            <div class="word-line line-3">Impersonal</div>
+        </h1>
+        <p class="hero-subtitle">Mapping The Providence Athenaeum</p>
+    </section>
+
+    <section class="data-section" id="data">
+        <div class="section-header">[ Select to Explore ]</div>
+        <div class="ornament-pattern top-left"></div>
+        <div class="ornament-pattern bottom-right"></div>
+        <div class="viz-container">
+    <div class="viz-item" onclick="openPanel('circulation')">
+        <div class="viz-number">[ 01 ]</div>
+        <div class="viz-content">
+            <h3 class="viz-title">Come<br>Hither</h3>
+            <p class="viz-desc">Flows and records</p>
+            <button class="viz-btn" onclick="event.stopPropagation(); window.open('index3.html')">[ Take Me To The Data ]</button>
+        </div>
+    </div>
+    <div class="viz-item" onclick="openPanel('taxonomy')">
+        <div class="viz-number">[ 02 ]</div>
+        <div class="viz-content">
+            <h3 class="viz-title">Exterior<br>Investigation</h3>
+            <p class="viz-desc">The work behind the walls</p>
+            <button class="viz-btn" onclick="event.stopPropagation(); window.open('index2.html', '_blank')">[ Take Me To The Data ]</button>
+        </div>
+    </div>
+    <div class="viz-item" onclick="openPanel('spatial')">
+        <div class="viz-number">[ 03 ]</div>
+        <div class="viz-content">
+            <h3 class="viz-title">Seeking<br>Sanctuary</h3>
+            <p class="viz-desc">Making a corner your own</p>
+            <button class="viz-btn" onclick="event.stopPropagation(); window.open('Chair web', '_blank')">[ Take Me To The Data ]</button>
+        </div>
+    </div>
+    <div class="viz-item" onclick="openPanel('temporal')">
+        <div class="viz-number">[ 04 ]</div>
+        <div class="viz-content">
+            <h3 class="viz-title">Conceal<br>Correspondnce</h3>
+            <p class="viz-desc">Notes left for strangers</p>
+            <button class="viz-btn" style="visibility: hidden;" onclick="event.stopPropagation(); window.open('#', '_blank')">[ Take Me To The Data ]</button>
+        </div>
+    </div>
+</div>
+    </section>
+
+    <div class="side-panel" id="sidePanel">
+        <div class="panel-header">
+            <button class="close-panel" onclick="closePanel()">[ Close ]</button>
+        </div>
+        <div class="panel-content" id="panelContent"></div>
+    </div>
+
+    <div class="info-strip" onclick="toggleInfo()">
+        <div class="info-strip-label">[ About Project ]</div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+    <div class="info-panel-content">
+        <div class="info-section">
+            <div class="info-section-title">About</div>
+            <p>The Athenaeum is an independent, membership-based library located on Benefit Street in Providence, Rhode Island. Established in 1836, it is one of the oldest libraries in the United States, serving as a center for learning, reading, and community programs for generations.</p>
+            
+            <p>"Personalize the Impersonal"</p>
+            
+            <p>The Athenaeum's entrance stands prominently at the corner of Benefit Street. The stone steps leading up may seem imposing at first, but they are a hallmark of its historic character, conveying a sense of tradition and architectural significance.</p>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-section-title">Experience</div>
+            <p>Once inside, patrons are greeted by a warm and inviting atmosphere. The library's interior features tall bookshelves, comfortable seating, and displays of artifacts and historical objects.</p>
+            
+            <p>Visitors are encouraged to explore the collection, appreciate the unique architecture, and learn about the library's role in the local community. Patrons have the freedom to choose their own seats, find a quiet corner to read or study, and spend time as they wish.</p>
+            
+            <p>Over time, each person contributes to the library's atmosphere, making it a unique and memorable place for everyone who visits.</p>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-section-title">Credits</div>
+            <p class="credits-text">
+                <strong>Design & Research</strong><br>
+  Punch Kulphisanrat<br>
+  Fah Prayottavekit<br>
+  Yi-Tung Chen (Antonio)<br><br>
+
+  <strong>Location</strong><br>
+  The Providence Athenaeum<br><br>
+
+  <strong>Typefaces</strong><br>
+  Affairs by SM Typeface Design<br>
+  Monument Grotesk Mono by ABC Dinamo<br><br>
+
+  <strong>Year</strong><br>
+  RISD 2025
+</div>
+            </p>
+        </div>
+    </div>
+</div>
+
+    <div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+    <script>
+        const cursor = document.querySelector('.cursor');
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.1;
+            cursorY += (mouseY - cursorY) * 0.1;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        const visualizations = {
+            circulation: {
+                title: 'Come Hither',
+                meta: '52,847 Checkouts Analyzed / 2020-2024',
+                text1: 'The fountain at the Athenaeum is more than just a decorative element—it serves as a welcoming symbol for everyone who visits. Flowing from the fountain is water that replenishes the weary, refreshes the wanderers, and revives the worriers. Its steady presence provides a sense of calm and relaxation, inviting people to pause and enjoy a moment of reflection. The fountain acts as a centerpiece for the garden, bringing together visitors from various backgrounds who come to learn, study, or simply take a break from their busy lives. The motion of the water mirrors the dynamic atmosphere inside the library, where activities and interactions continually change throughout the day.',
+                text2: 'This connection between the fountain and the library’s physical space highlights the Athenaeum’s commitment to being an inviting and accessible place for everyone. The fountain is the library’s offering to Providence, symbolizing its dedication to serving the community. Before entering the Athenaeum’s gated garden, visitors are greeted by the gentle sound and sight of the flowing water.  The presence of the fountain reinforces the idea that the Athenaeum is a place of comfort and generosity, open to all who seek knowledge or a peaceful environment. Bestowing you with unconditional grace, the library declares its invitation: “Come Hither!” it seems to yell. So come hither we did.',
+                link: 'index3.html',
+                data: [
+                    { value: '52,847', label: 'Total Checkouts' },
+                    { value: '3.2', label: 'Avg Per Patron' },
+                    { value: '12', label: 'Subject Clusters' },
+                    { value: '89%', label: 'Return Rate' }
+                ]
+            },
+            taxonomy: {
+                title: 'Exterior Investigation',
+                meta: '200,000+ Items / Complete Archive',
+                text1: 'Step into the storied halls of the Athenaeum, where history lingers in sunlit dust and echoes through ancient shelves. Better understand the rich tapestry of its past and present by hearing from Stephanie, the Head of Research & Library Services at the Providence Athenaeum.',
+                text2: 'Observe the harmonious rhythm by which the library is operated—a quiet choreography as librarians glide between stacks, collaborating to maintain, preserve, and renew the wisdom housed within these venerable walls.Through the lens of the exterior space, viewers glimpse the steadfast devotion required to sustain such a historic haven. Ancient stones and weathered façades whisper of the ceaseless labor beneath the surface—each repair, each restoration, a love letter to time itself. Here, the Athenaeum stands not only as a monument, but as a living poem, composed daily by all who cherish its legacy.',
+                link: 'index2.html',
+                data: [
+                    { value: '200k+', label: 'Items Catalogued' },
+                    { value: '500+', label: 'Subject Tags' },
+                    { value: '4', label: 'Floor Levels' },
+                    { value: '1836', label: 'Earliest Item' }
+                ]
+            },
+            spatial: {
+                title: 'Seeking Sanctuary',
+                meta: '8,500 Sq Ft / Built 1838',
+                text1: 'Each corner of the Athenaeum provides patrons with the opportunity to create a space that suits their individual needs. Whether someone is searching for a quiet nook to read in solitude or a comfortable area to work, the library accommodates a range of preferences. The option to turn on or off the lights allows visitors to set the atmosphere to their liking. Different types of chairs are available to suit various levels of privacy and comfort, and the ladders offer access to higher shelves, encouraging exploration of the library’s extensive collection.',
+                text2: 'We offer the same level of autonomy through various interactive features designed to help you personalize your experience at the Athenaeum. You can expand your chosen area to make it more spacious, or resize your corner for a more private and cozy feel. Adjust the layout by moving ladders and chairs to suit your preferences, and place signage wherever it is most helpful or relevant to you. The library encourages creative use of the space—add objects that make your area functional, comfortable, or uniquely yours. There are different types of chairs and seating arrangements to match your needs, whether you prefer a quiet individual space or a spot for small group discussions. By making these adjustments, you transform a shared environment into a personalized retreat that reflects your habits and interests. The Athenaeum values this flexibility, knowing it helps every visitor feel more at home and invested in their surroundings.',
+                link: 'Chair web',
+                data: [
+                    { value: '8,500', label: 'Square Feet' },
+                    { value: '42', label: 'Reading Spaces' },
+                    { value: '73%', label: 'Natural Light' },
+                    { value: '186', label: 'Years Standing' }
+                ]
+            },
+            temporal: {
+                title: 'Conceal Correspondence',
+                meta: '190 Years / 1836-2024',
+                text1: 'Embark on a deep exploration of the Athenaeum and you will discover the hidden troves of handwritten letters scattered throughout its quiet alcoves and shelves. In the gentle solitude offered by the library, thinkers and dreamers alike have put pencil to paper, pouring out their hopes, fears, and reflections. Each letter is a testament to the generosity of the space—a living archive where the writer’s soul breathes life into the centuries-old building. These missives range from confessions to unrequited lovers, to regretful memoirs weighed down by memory, to declarations of purpose and longing. Together, they form a tapestry of disparate souls, each drawn by the same subtle gravity to the sanctuary that is the Athenaeum.',
+                text2: 'Respondents of these letters have read and listened to the woes and wonders, expressing their amicable joy or undiluted concerns. This ongoing exchange of written words weaves a dialogue across generations. Join the patrons; Write your own letters, respond to those that move you, and contribute your voice to the ever-growing catalogue of stories that fill the Athenaeum’s walls. Reify your thoughts and materialize whatever stories might be weighing your soul down. The Athenaeum welcomes your expressions, offering a space of requiem and quiet peace where your words can find a home. We permit you to claim it as your own.',
+                data: [
+                    { value: '190', label: 'Years Documented' },
+                    { value: '12k', label: 'Books Per Decade' },
+                    { value: '45', label: 'Languages' },
+                    { value: '∞', label: 'Future Growth' }
+                ]
+            }
+        };
+
+        function toggleMenu() {
+            document.querySelector('.fullscreen-menu').classList.toggle('active');
+        }
+
+        function openPanel(vizId) {
+    const panel = document.getElementById('sidePanel');
+    const overlay = document.getElementById('overlay');
+    const content = document.getElementById('panelContent');
+    const viz = visualizations[vizId];
+
+    // Create button HTML only if it's NOT the temporal visualization
+    const buttonHTML = vizId !== 'temporal' ? `
+        <button class="panel-data-btn" onclick="window.open('${viz.link}', '_blank')">
+            [ Take Me To The Data ]
+        </button>
+    ` : '';
+
+    content.innerHTML = `
+        <h2 class="panel-title">${viz.title}</h2>
+        <p class="panel-text">${viz.text1}</p>
+        <p class="panel-text">${viz.text2}</p>
+        ${buttonHTML}
+    `;
+
+    panel.classList.add('active');
+    overlay.classList.add('active');
+}
+
+        function closePanel() {
+            document.getElementById('sidePanel').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        function toggleInfo() {
+            const infoPanel = document.getElementById('infoPanel');
+            infoPanel.classList.toggle('active');
+        }
+
+        function initKineticText() {
+            const kineticText = document.getElementById('kineticText');
+            const lines = kineticText.querySelectorAll('.word-line');
+            
+            lines.forEach(line => {
+                const text = line.textContent;
+                line.innerHTML = '';
+                
+                for (let i = 0; i < text.length; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'char';
+                    span.textContent = text[i];
+                    
+                    const randomValue = Math.random();
+                    span.style.setProperty('--random', randomValue);
+                    span.style.setProperty('--index', i);
+                    span.style.animationDelay = `${Math.random() * 5}s`;
+                    
+                    line.appendChild(span);
+                }
+            });
+        }
+
+        function addHoverEffect() {
+            const kineticText = document.getElementById('kineticText');
+            const chars = kineticText.querySelectorAll('.char');
+            
+            kineticText.addEventListener('mousemove', (e) => {
+                chars.forEach(char => {
+                    const rect = char.getBoundingClientRect();
+                    const charCenterX = rect.left + rect.width / 2;
+                    const charCenterY = rect.top + rect.height / 2;
+                    
+                    const deltaX = e.clientX - charCenterX;
+                    const deltaY = e.clientY - charCenterY;
+                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    
+                    if (distance < 150) {
+                        char.classList.add('hover-active');
+                        const force = (150 - distance) / 150;
+                        const pushX = -(deltaX / distance) * force * 40;
+                        const pushY = -(deltaY / distance) * force * 40;
+                        const rotate = force * 20 * (Math.random() > 0.5 ? 1 : -1);
+                        
+                        char.style.transform = `translate(${pushX}px, ${pushY}px) rotate(${rotate}deg) scale(${1 + force})`;
+                    } else {
+                        char.classList.remove('hover-active');
+                        char.style.transform = '';
+                    }
+                });
+            });
+            
+            kineticText.addEventListener('mouseleave', () => {
+                chars.forEach(char => {
+                    char.classList.remove('hover-active');
+                    char.style.transform = '';
+                });
+            });
+        }
+
+      const thumbnailData = [
+    { id: 1, label: 'One of the Many Unique Chairs in the Atheneum ', image: 'img/img1.jpg' },
+    { id: 2, label: 'Texture from an Old Chair in  the Atheneum', image: 'img/img2.jpg' },
+    { id: 3, label: 'The Providence Athenaeum on Benefit Street in Providence, around 1906', image: 'img/img3.jpg' },
+    { id: 4, label: 'Richmond Fountain', image: 'img/img4.jpg' },
+    { id: 5, label: 'Project for Lecture Hall: Longitudinal Section]. Ink, Pencil on Paper, CA. 1835. Providence Athenaeum: Russell Warren Drawings 168B', image: 'img/img5.jpg' },
+    { id: 6, label: ' Project for Lecture Hall: Front Elevation and Transverse Section]. Ink, Pencil on Paper, CA. 1835. Providence Athenaeum: Russell Warren Drawings 168A (Framed)', image: 'img/img6.jpg' },
+    { id: 7, label: 'Providence Athenaeum, Transverse Section]. Ink, Pencil and Watercolor on Paper, 1836. Providence Athenaeum: William Strickland Drawings 134B (Framed)', image: 'img/img7.jpg' },
+    { id: 8, label: 'Project for Lecture Hall: First Floor Plan]. Ink, Pencil on Paper, CA. 1835. Providence Athenaeum: Russell Warren Drawings 168C', image: 'img/img8.jpg' }
+];
+        function initThumbnails() {
+            const container = document.getElementById('thumbnailContainer');
+            // More dynamic, balanced distribution around all edges
+            const positions = [
+                { top: '18%', left: '-95px', rotation: -2 },     // Left edge upper
+                { top: '62%', left: '-100px', rotation: 3 },     // Left edge lower
+                { top: '12%', right: '-90px', rotation: 2 },     // Right edge upper
+                { top: '68%', right: '-105px', rotation: -3 },   // Right edge lower
+                { top: '-95px', left: '22%', rotation: 1 },      // Top edge left
+                { top: '-100px', right: '28%', rotation: -1 },   // Top edge right
+                { bottom: '-100px', left: '38%', rotation: -2 }, // Bottom edge left
+                { bottom: '-95px', right: '32%', rotation: 2 }   // Bottom edge right
+            ];
+
+            thumbnailData.forEach((data, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'thumbnail';
+                const pos = positions[index];
+                
+                // Apply position
+                if (pos.top !== undefined) thumb.style.top = pos.top;
+                if (pos.bottom !== undefined) thumb.style.bottom = pos.bottom;
+                if (pos.left !== undefined) thumb.style.left = pos.left;
+                if (pos.right !== undefined) thumb.style.right = pos.right;
+                
+                // Apply subtle rotation and store it as CSS variable
+                thumb.style.transform = `rotate(${pos.rotation}deg)`;
+                thumb.style.setProperty('--initial-rotation', `${pos.rotation}deg`);
+                
+                thumb.innerHTML = `
+    <img src="${data.image}" alt="${data.label}">
+`;
+                
+                makeThumbnailDraggable(thumb, data);
+                container.appendChild(thumb);
+            });
+        }
+
+        function makeThumbnailDraggable(element, data) {
+            let isDragging = false;
+            let hasMoved = false;
+            let currentX = 0, currentY = 0, initialX, initialY;
+            let startX, startY;
+            let animationFrameId = null;
+            
+            // Store initial rotation
+            const initialRotation = element.style.transform.match(/rotate\(([-\d.]+)deg\)/);
+            const rotation = initialRotation ? initialRotation[1] : 0;
+
+            element.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            function dragStart(e) {
+                if (e.target.classList.contains('thumbnail-label')) return;
+                
+                e.preventDefault();
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                const transform = element.style.transform;
+                const match = transform.match(/translate(?:3d)?\((-?\d+(?:\.\d+)?)px,\s*(-?\d+(?:\.\d+)?)px/);
+                if (match) {
+                    currentX = parseFloat(match[1]);
+                    currentY = parseFloat(match[2]);
+                }
+                
+                initialX = e.clientX - currentX;
+                initialY = e.clientY - currentY;
+                isDragging = true;
+                hasMoved = false;
+                element.classList.add('dragging');
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    
+                    const deltaX = Math.abs(e.clientX - startX);
+                    const deltaY = Math.abs(e.clientY - startY);
+                    
+                    if (deltaX > 5 || deltaY > 5) {
+                        hasMoved = true;
+                    }
+                    
+                    if (hasMoved) {
+                        currentX = e.clientX - initialX;
+                        currentY = e.clientY - initialY;
+                        
+                        if (animationFrameId) {
+                            cancelAnimationFrame(animationFrameId);
+                        }
+                        
+                        animationFrameId = requestAnimationFrame(() => {
+                            element.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(${rotation}deg)`;
+                        });
+                    }
+                }
+            }
+
+            function dragEnd(e) {
+                if (isDragging && !hasMoved) {
+                    createStackedImage(data);
+                }
+                isDragging = false;
+                element.classList.remove('dragging');
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+            }
+        }
+
+        let stackCount = 0;
+function createStackedImage(data) {
+    const container = document.getElementById('stackedImages');
+    const stackedDiv = document.createElement('div');
+    stackedDiv.className = 'stacked-image';
+    
+    const offsetX = (Math.random() - 0.5) * 40;
+    const offsetY = (Math.random() - 0.5) * 40;
+    const rotation = (Math.random() - 0.5) * 6;
+    
+    stackedDiv.style.left = `calc(50% + ${offsetX}px)`;
+    stackedDiv.style.top = `calc(50% + ${offsetY}px)`;
+    stackedDiv.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+    
+    // FIND THE HIGHEST Z-INDEX AND ADD 1
+    const allImages = document.querySelectorAll('.stacked-image');
+    let maxZ = 50;
+    allImages.forEach(img => {
+        const z = parseInt(img.style.zIndex) || 50;
+        if (z > maxZ) maxZ = z;
+    });
+    stackedDiv.style.zIndex = maxZ + 1;
+    
+    stackedDiv.innerHTML = `
+        <button class="stacked-image-close">×</button>
+        <div class="stacked-image-label">[ ${data.label} ]</div>
+        <img src="${data.image}" alt="${data.label}">
+        <div class="image-controls-inner">
+            <button class="control-btn-inner" onclick="nextImage(event)">[ Next ]</button>
+            <button class="control-btn-inner" onclick="clearAllImages(event)">[ Clear All ]</button>
+        </div>
+    `;
+    
+    stackedDiv.querySelector('.stacked-image-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        stackedDiv.remove();
+    });
+    
+    makeDraggable(stackedDiv);
+    container.appendChild(stackedDiv);
+}
+
+        let currentImageIndex = 0;
+
+function nextImage(event) {
+    event.stopPropagation();
+    
+    // Move to next image in array
+    currentImageIndex = (currentImageIndex + 1) % thumbnailData.length;
+    const nextData = thumbnailData[currentImageIndex];
+    
+    createStackedImage(nextData);
+}
+
+        function clearAllImages(event) {
+            if (event) event.stopPropagation();
+            const images = document.querySelectorAll('.stacked-image');
+            images.forEach(img => {
+                img.style.transition = 'all 0.3s ease';
+                img.style.opacity = '0';
+                img.style.transform = 'scale(0.5)';
+                setTimeout(() => img.remove(), 300);
+            });
+        }
+
+        function makeDraggable(element) {
+            let isDragging = false;
+            let currentX = 0, currentY = 0, initialX, initialY;
+            let xOffset = 0, yOffset = 0;
+            let animationFrameId = null;
+
+            element.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            function dragStart(e) {
+                if (e.target.classList.contains('stacked-image-close') || 
+                    e.target.classList.contains('control-btn-inner') ||
+                    e.target.closest('.image-controls-inner')) return;
+                
+                e.preventDefault();
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+
+                isDragging = true;
+                element.classList.add('dragging');
+                const allImages = document.querySelectorAll('.stacked-image');
+                let maxZ = 50;
+                allImages.forEach(img => {
+                    const z = parseInt(img.style.zIndex) || 50;
+                    if (z > maxZ) maxZ = z;
+                });
+                element.style.zIndex = maxZ + 1;
+                element.style.transition = 'none';
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
+                    
+                    animationFrameId = requestAnimationFrame(() => {
+                        xOffset = currentX;
+                        yOffset = currentY;
+
+                        const rotation = element.style.transform.match(/rotate\(([-\d.]+)deg\)/);
+                        const rotateValue = rotation ? rotation[1] : 0;
+                        
+                        element.style.transform = `translate3d(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px), 0) rotate(${rotateValue}deg)`;
+                    });
+                }
+            }
+
+            function dragEnd(e) {
+                isDragging = false;
+                element.classList.remove('dragging');
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                element.style.transition = 'box-shadow 0.2s ease, opacity 0.2s ease';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initKineticText();
+            addHoverEffect();
+            initThumbnails();
+            
+            document.addEventListener('mouseover', (e) => {
+                if (e.target.closest('a, button, .viz-item, .thumbnail, .control-btn-inner')) {
+                    cursor.classList.add('hover');
+                }
+            });
+            
+            document.addEventListener('mouseout', (e) => {
+                if (e.target.closest('a, button, .viz-item, .thumbnail, .control-btn-inner')) {
+                    cursor.classList.remove('hover');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
